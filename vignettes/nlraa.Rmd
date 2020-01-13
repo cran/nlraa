@@ -1,0 +1,271 @@
+---
+title: "Nonlinear Regression Agricultural Applications"
+author: "Fernando Miguez"
+date: "`r Sys.Date()`"
+fig_width: 6
+fig_height: 4
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{nlraa: An R package for Nonlinear Regression Applications in Agricultural Research}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height = 6)
+library(ggplot2)
+library(nlraa)
+```
+
+# Nonlinear Regression
+
+For an introduction to this topic see the publication by Archontoulis and Miguez (https://doi.org/10.2134/agronj2012.0506) and the book chapter by Miguez, Archontoulis and Dokoohaki (https://doi.org/10.2134/appliedstatistics.2016.0003).
+
+One of the objectives of those publications was to introduce a large family of nonlinear functions to practicioners in the agricultural research area to a variety of tools that can use to fit data which does not conform to a linear relationship. The feature that distinguishes this approach from others such as ploynomials, splines or gams (to name a few) is that the parameters of the model have biologically meaningful interpretations. In R the approach that makes fitting nonlinear mixed models almost as easy as fitting linear mixed models is the use of self starting functions.
+
+# Index of self starting functions
+
+## Functions in 'base' R
+
+**stats** package
+
+1. SSasymp (Asymptotic)
+2. SSasympOff (Asymptotic with an offset)
+3. SSasympOrig (Asymptotic through the Origin)
+4. SSbiexp (Bi-exponential)
+5. SSfol (First order compartment)
+6. SSfpl (Four parameter logistic)
+7. SSgompertz (Gompertz)
+8. SSlogis (Logistic)
+9. SSmicmen (Michaelis-Menten)
+10. SSweibull (Weibull)
+
+## Functions in this package (nlraa)
+
+1. SSbgf (Beta-Growth Function)
+2. SSbgf4 (Four Parameter Beta-Growth Function)
+3. SSbgrp (Beta-Growth Reparameterized)
+4. SSbg4rp (Four Parameter Beta-Growth Reparameterized)
+5. SSdlf (Declining Logistic Function)
+6. SSricker (Ricker population growth)
+7. SSprofd (Profile of protein distribution)
+8. SSnrh (Non-rectangular hyperbola)
+9. SSlinp (linear-plateau)
+10. SSplin (plateau-linear)
+11. SSquadp (quadratic-plateau)
+12. SSpquad (plateau-quadratic)
+13. SSblin (bilinear)
+14. SSexpf (exponential function)
+15. SSexpfp (exponential-plateau)
+16. SSpexpf (plateau-exponential)
+17. SSbell (bell-shaped function)
+18. SSratio (rational function)
+
+For the reference on the Beta growth function see Yin et al. 2003 (https://doi.org/10.1093/aob/mcg029) and Erratum: (https://doi.org/10.1093/aob/mcg091).
+For a reference on a use of the declining logistic see Oddi et al. (2019) (and vignette in this package). For the Ricker model see: (https://en.wikipedia.org/wiki/Ricker_model). For the protein profile in the canopy see Johnson et al. (2010) (https://doi.org/10.1093/aob/mcq183). 
+
+The *SSbgrp* function is a reparameterized version of *SSbgf*. The original *SSbgf* does not enforce the constraint that *t.m < t.e* and this makes it somewhat numerically unstable for routine use (but more testing is needed). To recover the original parameters from *SSbgrp*, take the exponential of *lt.e*, so *t.e = exp(lt.e)* and likewise *t.m = exp(lt.e) - exp(ldt)*. There is a similar function for the four parameter Beta growth *SSbg4rp*.
+
+The main benefit of having these self starting functions is that they can be incorporated in the workflow of package 'nlme' which allows for fitting nonlinear mixed models. Although there are other tools available, package nlme is still appropriate for most applications in agricultural, environmental and biological sciences.
+
+### List of available SS (self-start) functions.
+
+```{r apropos}
+apropos("^SS")
+```
+
+# Datasets
+
+These are the available datasets distributed with this package:
+
+1. "sm"
+2. "lfmc"
+3. "swpg"
+4. "barley"
+
+```{r sm}
+## Sorghum and Maize dataset
+data(sm)
+ggplot(data = sm, aes(x = DOY, y = Yield, color = Crop)) + 
+  geom_point() + 
+  facet_wrap(~ Input)
+```
+
+```{r lfmc}
+## Live fuel moisture content
+data(lfmc)
+ggplot(data = lfmc, aes(x = time, y = lfmc, color = leaf.type)) +
+  geom_point() + 
+  ylab("Live fuel moisture content (%)")
+```
+
+```{r swpg}
+## Soil water and plant growth
+data(swpg)
+ggplot(data = swpg, aes(x = ftsw, y = lfgr)) +
+  geom_point() + 
+  xlab("Fraction Transpirable Soil Water") + 
+  ylab("Relative Leaf Growth")
+```
+
+```{r barley}
+## Response of barley to nitrogen fertilizer
+data(barley)
+ggplot(data = barley, aes(x = NF, y = yield, color = as.factor(year))) +
+  geom_point() +
+  xlab("Nitrogen fertilizer (g/m^2)") +
+  ylab("Grain (g/m^2)")
+```
+
+# What to do when convergence fails?
+
+The most common issue with nonlinear regression models is related to convergence problems.
+Convergence problems in nonlinear models can be caused by many different reasons. These are a few of them:
+
+1. The model is not appropriate for the observed data (or viceversa)
+2. The model is conceptually correct but there is an error in the formula
+3. The model is too complex; a simpler model should be used
+4. The model is too simple; a more complex model should be used
+5. Starting values are too far from the solution
+
+Model specification (choosing the correct model) is clearly very important when using 
+nonlinear models, the references above and this package are a resource that tries to alleviate this issue. 
+
+For convergence problems related to poor starting values there are some alternatives:
+
+1. Try algorithm 'port' in function 'nls'
+2. Use an alternative algorithm 'Levenberg-Marquardt' in package 'minpack.lm' through the function 'nlsLM', which can be more robust
+3. Use function 'nls2' in package 'nls2' which uses a 'brute-force' approach of searching over a grid
+4. Define a custom optimization and use function 'optim' in 'stats' package (also 'nlm' or 'nlminb'). This option extends the possibility of available algorithms.
+5. Manually construct a profile of residual sum of squares as a function of the parameters to understand the relationship which might lead to a better choice for starting values.
+
+## Some common error messages
+
+When fitting nonlinear models some error messages will be commonly encountered. For example,
+
+```{r, eval = FALSE}
+## Error in nls(y ~ SSratio(x, a, b, c, d), data = dat) : 
+##  step factor 0.000488281 reduced below 'minFactor' of 0.000976562
+```
+
+Although one option is to reduce `minFactor` under `control` in `nls` it is better to first check that the model is appropriate for the data and that starting values are reasonable. Another option is to use `nlsLM` from the `minpack.lm` package, which can be more robust. 
+
+Another possible error message is:
+
+```{r, eval = FALSE}
+## Error in qr.default(.swts * gr) : 
+##  NA/NaN/Inf in foreign function call (arg 1)
+```
+
+This can be caused by the presence of missing data, which your model cannot handle, or by the presence of zeros in the data that can generate `NA/NaN/Inf` inside other functions. The solution is to remove missing data and/or zeros.
+
+## Barley example
+
+For background see: (http://miguezlab.agron.iastate.edu/OldWebsite/Research/Talks/ASA_Miguez.pdf).
+
+```{r barleyG}
+library(nlme)
+data(barley)
+barley$yearf <- as.factor(barley$year)
+barleyG <- groupedData(yield ~ NF | yearf, data = barley)
+```
+
+First step is to create the grouped data object. Then fit the asymptotic regression to each year and the mixed model.
+
+```{r barleyG-mixed}
+## Fit the nonlinear model for each year
+fit.nlis <- nlsList(yield ~ SSasymp(NF, Asym, R0, lrc), data = barleyG)
+## Use this to fit a nonlinear mixed model
+fit.nlme <- nlme(fit.nlis)
+## Investigate residuals
+plot(fit.nlme)
+## Look at predictions
+plot(augPred(fit.nlme, level = 0:1))
+## Compute confidence intervals
+intervals(fit.nlme)
+## A simpler model is possible...
+```
+
+## Other modeling approaches
+
+Other modeling approaches do not use such a rigid specification as the models classically used in nonlinear relationships. Some examples are:
+
+1. **splines** (packages 'splines' or 'splines2')
+2. **gams** (package 'mgcv')
+3. **loess** (package 'stats')
+4. **quantile regression** (packages 'quantreg*')
+5. **polynomials** (poly in package 'stats')
+6. **segmented regression** (segmented in package 'segmented')
+
+Although these previous methods are much more flexible than classical nonlinear regression, the traditional approaches have the benefit of being simple and providing parameters with a straight-forward interpretation.
+
+# Contributed packages
+
+I have not tested any of these packages. They are here for reference.
+
+## **FlexParamCurve** package
+
+See Oswald, Nisbet, Chiaradia and Arnold, MEE, (2012) ( https://doi.org/10.1111/j.2041-210X.2012.00231.x).
+
+1. SSposnegRichards (Positive-Negative Richards)
+
+## **sicegar** package
+
+Available from CRAN. See:
+See Umut Caglar, Teufel and Wilke (https://peerj.com/articles/4251/)
+
+Package available at https://github.com/wilkelab/sicegar
+
+## **drc** package 
+
+Dose-response curves package
+
+Ritz C, Baty F, Streibig JC, Gerhard D
+(2015) Dose-Response Analysis Using R. PLoS ONE
+10(12): e0146021. \doi{10.1371/journal.pone.0146021}.
+
+## **easynls** pacakge
+
+Might make it easier to fit and plot a few different models.
+
+## **chngpt** pacakge
+
+chngpt: threshold regression model estimation and inference. 
+\doi{10.1186/s12859-017-1863-x}.
+
+## **HydroMe** package
+
+This package has functions for fitting water retention curves. It
+uses the 'minpack.lm' package which has a different implementation of the 
+minimization algorithm (Levenberg-Marquardt).
+
+This package has the following selfStart functions:
+
+1. SSfredlund
+2. SSgampt
+3. SSgard
+4. SSgardner
+5. SShorton
+6. SSkosugi
+7. SSomuto
+8. SSphilip
+9. SSvgm
+
+And additional models, such as:
+
+1. Tani
+2. Brook
+3. Campbel
+4. Expo
+
+## Additional material on growth models
+
+1. A unified approach to the Richards-model family for use in growth analyses:
+Why we need only two model forms. \doi{10.1016/j.jtbi.2010.09.008}. Might incorporate this function in the package in the future.
+
+2. The use of Gompertz models in growth analyses, and new Gompertz-model approach: An addition to the Unified-Richards family. (https://doi.org/10.1371/journal.pone.0178691).
+
+3. Choosing the right sigmoid growth function using the unified-models approach. \doi{10.1111/ibi.12592}.
+
+
+

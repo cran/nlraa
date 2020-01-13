@@ -1,0 +1,68 @@
+#' Live fuel moisture content
+#'
+#' A dataset containing the leaf.type, time, plot, site and lfmc (live fuel mass concentration)
+#'
+#' @format A data frame with 247 rows and 5 variables:
+#' \describe{
+#'   \item{leaf.type}{ -factor- Species for which data was recorded ("Grass E", "Grass W", "M. spinosum", "S. bracteolactus")}
+#'   \item{time}{ -integer- time in days 1-80}
+#'   \item{plot}{ -factor- plot with levels 1-6 (discrete)}
+#'   \item{site}{ -factor- either P ("East") or SR ("West")}
+#'   \item{lfmc}{ -numeric- Live fuel moisture content (percent)}
+#'   \item{group}{grouping for regression}
+#' }
+#' @source \url{https://doi.org/10.1002/ece3.5543}
+"lfmc"
+
+#' Sorghum and Maize growth in Greece
+#' 
+#' A dataset containing growth data for sorghum and maize in Greece.
+#' 
+#' Danalatos, N.G.,  S.V. Archontoulis, and K. Tsiboukas. 2009. 
+#' Comparative analysis of sorghum versus corn growing under optimum and under 
+#' water/nitrogen limited conditions in central Greece. In: From research to 
+#' industry and markets: Proceedings of the 17th European Biomass Conference, 
+#' Hamburg, Germany. 29 June–3 July 2009. ETA–Renewable Energies, Florence, 
+#' Italy. p. 538–544.
+#' 
+#' @format A data frame with 235 rows and 5 columns
+#' \describe{
+#'   \item{DOY}{ -integer- Day of the year 141-303}
+#'   \item{Block}{ -integer- Block in the experimental design 1-4}
+#'   \item{Input}{ -integer- Input level 1 (Low) or High (2)}
+#'   \item{Crop}{ -factor- either F (Fiber Sorghum), M (Maize), S (Sweet Sorghum)}
+#'   \item{Yield}{ -numeric- Biomass yield in Mg/ha}
+#' }
+#' @source See above reference 
+#' ## TODO: insert link to paper
+ "sm"
+ 
+ #' Simulated data based on obseved data presented in Sinclair (1986) - Fig. 1A
+ #' 
+ #' Sinclair, T.R. Water and Nitrogen Limitations in Soybean Grain Production I. Model Development.
+ #' Field Crops Research. 125-141.
+ #' 
+ #' @format A data frame with 20 rows and 3 columns
+ #' \describe{
+ #'   \item{ftsw}{Fraction of Transpirable Soil Water (0-1)}
+ #'   \item{lfgr}{Relative Leaf Growth scaled from 0 to 1}
+ #' }
+ #' @source Simluated data (much cleaner than original) based on the above publication
+ "swpg"
+ 
+ #' Data from a paper by Arild Vold on response of barley to nitrogen fertilizer
+ #' 
+ #'
+ #' @format A data frame with 76 rows and 3 columns
+ #' \describe{
+ #'   \item{year}{Year when the trial was conducted (1970-1988).}
+ #'   \item{NF}{Nitrogen fertilizer (g/m^2).}
+ #'   \item{yield}{Grain yield of barley (g/m^2).}
+ #' }
+ #' @source Aril Vold (1998). A generalization of ordinary yield response functions. Ecological Applications. 108:227-236.
+ "barley"
+ 
+ #' Import packages needed for nlraa to work correctly
+ #' @import knitr nlme stats
+ #' @importFrom utils warnErrList
+ NULL
