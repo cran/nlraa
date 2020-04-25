@@ -8,6 +8,8 @@ if(test.other.examples){
   require(ggplot2)
   require(segmented)
   require(minpack.lm)
+  require(car)
+  require(nlstools)
   
   data(plant)
   
@@ -31,6 +33,14 @@ if(test.other.examples){
   ## plot for RKV
   ggplot(data = subset(plant, group == "RKV"), aes(x = time, y = y)) + 
     geom_point() + geom_line(aes(y = fitted(fit.rkv)))
+  
+  ## Data 'down'
+  ## data(down)
+  ## fit <- nls(births ~ SSricker(age, a, b), data = down)
+  
+  ## ggplot(data = down, aes(age, births)) + 
+    ## geom_point() + 
+    ## geom_line(aes(y = fitted(fit)))
   
   ## Testing with the swpg data
   data(swpg)
@@ -231,5 +241,114 @@ if(test.other.examples){
   ggplot(data = vmkm, aes(x = S, y = v)) + 
     geom_point() + 
     geom_line(aes(y = fitted(fit)))
+  
+  ## Let's review the datasets in NISTnls
+  library(NISTnls)
+  
+  ## Bennett5 - not interested
+  data(Chwirut1)
+  fit <- nls(y ~ SSexpfp(x, a, c, d), data = Chwirut1)
+  ggplot(data = Chwirut1, aes(x, y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  
+  data(Chwirut2)
+  fit <- nls(y ~ SSexpfp(x, a, c, d), data = Chwirut2)
+  ggplot(data = Chwirut2, aes(x, y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  ## DanielWood - not interested
+  ## ENSO - not interested
+  data(Eckerle4)
+  fit <- nls(y ~ SSbell(x, ymax, a, b, xc), data = Eckerle4)
+  ggplot(data = Eckerle4, aes(x, y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  
+  ## Gauss1, Gauss2, Gauss3 - nlraa cannot handle this!
+  ## should use splines or gams instead
+  
+  data(Hahn1)
+  fit <- nlsLM(y ~ SSratio(x, a, b, c, d), data = Hahn1, control = list(maxiter = 1e3))
+  ggplot(data = Hahn1, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  ## Almost perfect fit, but there are complains
+  fit2 <- nlsLM(y ~ SSratio(x, a, b, c, d), data = Hahn1, start = coef(fit))
+  ggplot(data = Hahn1, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit2)))
+  
+  ## Kirby2 - maybe, but there is not much of an error
+  ## Lanczos1, 2, and 3 - not too interesting
+  data(MGH09)
+  fit <- nls(y ~ SSblin(x, a, b, xs, c), data = MGH09)
+  ggplot(data = MGH09, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  
+  ## MGH10 - not interested
+  ## MGH17 - challenging, but do not have a good candidate
+  ## Misra1a, b, c and d - not interested
+  ## Nelson - not sure what this one is about
+  ## Ratkowsky2 and 3 - look like good candidates for logistic or Gompertz
+  data(Ratkowsky2)
+  fit1 <- nls(y ~ SSlogis(x, Asym, xmid, scal), data = Ratkowsky2)
+  ggplot(data = Ratkowsky2, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit1)))
+  
+  ## What about a 5 parameter logistic?
+  fit2 <- nlsLM(y ~ SSlogis5(x, asym1, asym2, xmid, iscal, theta), data = Ratkowsky2, control = list(maxiter = 1e3))
+  ggplot(data = Ratkowsky2, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit2)))
+  ## Comparing the models
+  anova(fit1, fit2)
+  fit2.bt <- Boot(fit2)
+  hist(fit2.bt)
+  ## These shows that the parameters are not well constrained under this model
+  
+  data("Ratkowsky3")
+  fit1 <- nls(y ~ SSlogis(x, asym, xmid, scal), data = Ratkowsky3)
+  ggplot(data = Ratkowsky3, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit1)))
+  
+  fit2 <- nlsLM(y ~ SSlogis5(x, asym1, asym2, xmid, iscal, theta), data = Ratkowsky3, control = list(maxiter = 1e3))
+  fit3 <- nls(y ~ SSgompertz(x, a, b, c), data = Ratkowsky3)
+  ggplot(data = Ratkowsky3, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit2)))
+  ggplot(data = Ratkowsky3, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit3)))
+  
+  ## Five-parameter logistic fits a little bit better
+  anova(fit1, fit2, fit3)
+  fit2.bt <- Boot(fit2)
+  hist(fit2.bt)
+  
+  data(Roszman1)
+  fit <- nls(y ~ SSexpf(x, a, c), data = Roszman1)
+  ggplot(data = Roszman1, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  
+  ## Blinear is not actually a terrible fit
+  fit <- nls(y ~ SSblin(x, a, b, xs, c), data = Roszman1)
+  ggplot(data = Roszman1, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  
+  data(Thurber)
+  ## Several possible models
+  fit <- nls(y ~ SSfpl(x, a, b, c, d), data = Thurber)
+  ggplot(data = Thurber, aes(x = x, y = y)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  
+  ## Another idea is to show and compare the car::Boot and nlstools:nlsBoot functions
+  ## These could be very useful, especially when the confidence interval function 'confint'
+  ## fails
+  
+  ## Datasets from 'nlstools'
+  data(L.minor)
+  ## Blinear
+  fit1 <- nls(rate ~ SSblin(conc, a, b, xs1, c), data = L.minor)
+  ## MicMen
+  fit2 <- nls(rate ~ SSmicmen(conc, Vm, K), data = L.minor)
+  ## rational with minpack.lm
+  fit3 <- nlsLM(rate ~ SSratio(conc, a, b, c, d), data = L.minor)
+  
+  ggplot(data = L.minor, aes(conc, rate)) + geom_point() + 
+    geom_line(aes(y = fitted(fit1), color = "blinear")) + 
+    geom_line(aes(y = fitted(fit2), color = "MicMen")) +
+    geom_line(aes(y = fitted(fit3), color = "rational"))
+  
+  ## Oxygen uptake
+  data("O2K")
+  fit <- nls(VO2 ~ SSpquad(t, a, xs, b, c), data = O2K)
+  ggplot(data = O2K, aes(x = t, y = VO2)) + geom_point() + geom_line(aes(y = fitted(fit)))
+  
+  ## nlstool::vmkm
+  data(vmkm)
+  fit1 <- nls(v ~ SSmicmen(S, Vm, K), data = vmkm)
+  ggplot(data = vmkm, aes(x = S, y = v)) + geom_point() + geom_line(aes(y = fitted(fit1)))
+  
+  fit2 <- nls(v ~ SSasymp(S, Asym, R0, lrc), data = vmkm)
+  ggplot(data = vmkm, aes(x = S, y = v)) + geom_point() + geom_line(aes(y = fitted(fit2)))
   
 }
