@@ -1,5 +1,5 @@
 Package: nlraa
-Version: 0.65
+Version: 0.73
 Authors@R: c(person("Fernando", "Miguez", email = "femiguez@iastate.edu", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-4627-8329")),
              person("José", "Pinheiro", role = c("ctb","cph"), comment = "author of nlme::nlsList, nlme::predict.gnls, nlme::predict.nlme"),
              person("Douglas", "Bates", role = c("ctb","cph"), comment = "author of nlme::nlsList, nlme::predict.gnls, nlme::predict.nlme"),
@@ -11,13 +11,13 @@ License: GPL-3
 Encoding: UTF-8
 VignetteBuilder: knitr
 BugReports: https://github.com/femiguez/nlraa/issues
-Imports: boot, knitr, MASS, nlme, stats
+Imports: boot, knitr, MASS, Matrix, mgcv, nlme, stats
 Suggests: bbmle, car, emmeans, ggplot2, HydroMe, lattice, minpack.lm,
-        NISTnls, nlstools, nls2, segmented
+        NISTnls, nlstools, nls2, parallel, segmented
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 NeedsCompilation: no
-Packaged: 2020-04-24 12:15:01 UTC; fernandomiguez
+Packaged: 2020-06-12 12:49:05 UTC; fernandomiguez
 Author: Fernando Miguez [aut, cre] (<https://orcid.org/0000-0002-4627-8329>),
   José Pinheiro [ctb, cph] (author of nlme::nlsList, nlme::predict.gnls,
     nlme::predict.nlme),
@@ -26,4 +26,4 @@ Author: Fernando Miguez [aut, cre] (<https://orcid.org/0000-0002-4627-8329>),
   R-core [ctb, cph]
 Maintainer: Fernando Miguez <femiguez@iastate.edu>
 Repository: CRAN
-Date/Publication: 2020-04-25 01:50:02 UTC
+Date/Publication: 2020-06-12 14:30:02 UTC

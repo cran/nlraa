@@ -22,8 +22,8 @@
 #' 
 #' @title Simulate fitted values from an object of class \code{\link[nlme]{gnls}}
 #' @description Simulate values from an object of class gnls. Unequal variances, 
-#' as modeled using the \sQuote{weights} option are supported, but the \sQuote{correlation}
-#' is not taken into account when sampling residuals.
+#' as modeled using the \sQuote{weights} option are supported, and there is experimental
+#' code for dealing with the \sQuote{correlation} structure. 
 #' @name simulate_gnls
 #' @param object object of class \code{\link[nlme]{gnls}}
 #' @param psim parameter simulation level, 0: for fitted values, 1: for simulation from 
@@ -32,7 +32,7 @@
 #' will appear similar to the observed values
 #' @param na.action default \sQuote{na.fail}. See \code{\link[nlme]{predict.gnls}}
 #' @param naPattern missing value pattern. See \code{\link[nlme]{predict.gnls}}
-#' @param ... additional arguments (none used at the moment)
+#' @param ... additional arguments (it is possible to supply a newdata this way)
 #' @return It returns a vector with simulated values with length equal to the number of rows 
 #' in the original data
 #' @details It uses function \code{\link[MASS]{mvrnorm}} to generate new values for the coefficients
@@ -58,7 +58,14 @@ simulate_gnls <- function(object, psim = 1, na.action = na.fail, naPattern = NUL
   
     mCall <- object$call
     
-    ndata <- eval(object$call$data)
+    ## ndata <- eval(object$call$data)
+    ## Is this more robust?
+    args <- list(...)
+    if(!is.null(args$newdata)){
+      ndata <- args$newdata
+    }else{
+      ndata <- nlme::getData(object)      
+    } 
     
     mfArgs <- list(formula =
                      nlme::asOneFormula(formula(object),
@@ -136,8 +143,25 @@ simulate_gnls <- function(object, psim = 1, na.action = na.fail, naPattern = NUL
       ## Sample standardized residuals and scale by the 
       ## residual standard error
       ## N is the number of rows in the data
-      rsds.std <- stats::rnorm(N, 0, 1)
-      rsds <- rsds.std * attr(residuals(object), "std") ## This last term is 'sigma'
+      ## this works for uncorrelated errors
+      if(is.null(object$modelStruct$corStruct)){
+        rsds.std <- stats::rnorm(N, 0, 1)
+        rsds <- rsds.std * attr(residuals(object), "std") ## This last term is 'sigma'
+      }else{
+        ## This was added 2020-05-04
+        ## This extracts the variance covariance of the error matrix
+        ## This is potentially a huge matrix
+        var.cov.err <- var_cov(object, sparse = TRUE)
+        ## This generates residuals considering the variance covariance of the error matrix
+        ## It is computationally demanding
+        ## I'm going to try using the mean of the errors for the mean (2020-05-26)
+        ## I'm thinking now (2020-06-03) that the Cholesky factorization is better
+        ## rsds <- MASS::mvrnorm(mu = residuals(object), Sigma = var.cov.err) - old, pre 2020-06-03
+        ## Update: The Cholesky method is 10x faster than the MASS::mvrnorm method
+        ## I have no idea if they produce similar simulations
+        chol.var.cov.err <- Matrix::chol(var.cov.err)
+        rsds <- Matrix::as.matrix(chol.var.cov.err %*% rnorm(nrow(chol.var.cov.err)))
+      }
     }
     ##------ End FEM section ----------------------##
     

@@ -31,7 +31,7 @@
 #' @param asList optional logical value. See \code{\link[nlme]{predict.nlme}}
 #' @param na.action missing value action. See \code{\link[nlme]{predict.nlme}}
 #' @param naPattern missing value pattern. See \code{\link[nlme]{predict.nlme}}
-#' @param ... additional arguments to be passed (not used at the moment)
+#' @param ... additional arguments to be passed (possible to pass newdata this way)
 #' @details It uses function \code{\link[MASS]{mvrnorm}} to generate new values for the coefficients
 #' of the model using the Variance-Covariance matrix \code{\link{vcov}}
 #' @return This function should always return a vector with the same dimensions as the original data
@@ -63,7 +63,13 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
     level <- 0:Q
   }
     
-  newdata <- eval(object$call$data)
+  ## Retrieving data, the newdata argument is sort of 'hidden'
+  args <- list(...)
+  if(!is.null(args$newdata)){
+    newdata <- args$newdata
+  }else{
+    newdata <- nlme::getData(object)  
+  } 
     
   maxQ <- max(level)			# maximum level for predictions
   nlev <- length(level)
@@ -201,8 +207,20 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
     
     if(psim == 2){
       fix <- MASS::mvrnorm(n = 1, mu = nlme::fixef(object), Sigma = vcov(object))
-      rsds.std <- stats::rnorm(N, 0, 1) ## These are standardized residuals 'pearson'?
-      rsds <- rsds.std * attr(object[["residuals"]], "std") ## This last term is 'sigma'
+      
+      if(is.null(object$modelStruct$corStruct)){
+        rsds.std <- stats::rnorm(N, 0, 1) ## These are standardized residuals 'pearson'
+        rsds <- rsds.std * attr(object[["residuals"]], "std") ## This last term is 'sigma'        
+      }else{
+        ## For details on this see simulate_gnls
+        ## This is my attempt at modeling correlated residuals
+        ## Much, much more computationally demanding than when 
+        ## residuals are not correlated, which should be the case
+        ## for most NLME models
+        var.cov.err <- var_cov(object, sparse = TRUE)
+        chol.var.cov.err <- Matrix::chol(var.cov.err)
+        rsds <- Matrix::as.matrix(chol.var.cov.err %*% rnorm(nrow(chol.var.cov.err)))
+      }
     }
     ##-------------------------------------------------------------##
     
