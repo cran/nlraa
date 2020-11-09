@@ -1,17 +1,17 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(nlme)
 library(nlraa)
 library(ggplot2)
 library(knitr)
 
-## ----lm-1----------------------------------------------------------------
+## ----lm-1---------------------------------------------------------------------
 x <- rnorm(20)
 y <- 1 + 2 * x + rnorm(20, sd = 0.5)
 plot(x, y)
 fit <- lm(y ~ x)
 
-## ----lm-coef-------------------------------------------------------------
+## ----lm-coef------------------------------------------------------------------
 ## Print beta hat
 coef(fit)
 ## Print sigma
@@ -19,7 +19,7 @@ sigma(fit)
 ## Print the covariance matrix of beta hat
 vcov(fit)
 
-## ----lm-var_cov----------------------------------------------------------
+## ----lm-var_cov---------------------------------------------------------------
 ## Extract the variance covariance of the residuals (which is also of the response)
 lm.vc <- var_cov(fit)
 ## Print just the first 5 observations
@@ -29,19 +29,19 @@ round(lm.vc[1:5,1:5],2)
 ## Note: log(0) becomes -Inf, but not shown here
 image(log(lm.vc[,ncol(lm.vc):1]))
 
-## ----lm-table, echo = FALSE----------------------------------------------
+## ----lm-table, echo = FALSE---------------------------------------------------
 dat <- data.frame(r.function = "lm", beta = "coef", 
                   cov.beta = "vcov", sigma = "sigma",
                   X = "model.matrix", y.hat = "fitted",
                   e = "residuals", cov.e = "var_cov")
 kable(dat)
 
-## ----gls-chickweight-----------------------------------------------------
+## ----gls-chickweight----------------------------------------------------------
 ## ChickWeight example
 data(ChickWeight)
 ggplot(data = ChickWeight, aes(Time, weight)) + geom_point()
 
-## ----gls-chickweight-weights---------------------------------------------
+## ----gls-chickweight-weights--------------------------------------------------
 ## One possible model is
 fit.gls <- gls(weight ~ Time, data = ChickWeight,
                weights = varPower())
@@ -64,7 +64,7 @@ image(log(vc2[,ncol(vc2):1]),
 image(log(fit.gls.vc[,ncol(fit.gls.vc):1]), 
       main = "All observations, Cov(resid)")
 
-## ----gls-chickweight-weights-corr----------------------------------------
+## ----gls-chickweight-weights-corr---------------------------------------------
 ## Adding the correlation
 fit.gls2 <- gls(weight ~ Time, data = ChickWeight,
                 weights = varPower(), 
@@ -81,7 +81,7 @@ vc2.36 <- fit.gls2.vc[1:36,1:36]
 image(log(vc2.36[,ncol(vc2.36):1]),
       main = "Covariance matrix of residuals \n for the first three Chicks (log-scale)")
 
-## ----ChickWeight-ggplot2-facet-------------------------------------------
+## ----ChickWeight-ggplot2-facet------------------------------------------------
 ggplot(data = ChickWeight, aes(x = Time, y = weight)) + 
   facet_wrap( ~ Chick) + 
   geom_point()

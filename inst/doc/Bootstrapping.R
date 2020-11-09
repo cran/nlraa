@@ -1,19 +1,19 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE, fig.width = 6, fig.height = 4)
 
-## ----setup2--------------------------------------------------------------
+## ----setup2-------------------------------------------------------------------
 library(ggplot2)
 library(nlraa)
 library(car)
 library(nlme)
 
-## ----barley--------------------------------------------------------------
+## ----barley-------------------------------------------------------------------
 data(barley, package = "nlraa")
 
 ## Quick visualization
 ggplot(data = barley, aes(x = NF, y = yield)) + geom_point()
 
-## ----linp----------------------------------------------------------------
+## ----linp---------------------------------------------------------------------
 ## Linear-plateau model
 ## The function SSlinp is in the 'nlraa' package
 fit.lp <- nls(yield ~ SSlinp(NF, a, b, xs), data = barley)
@@ -23,13 +23,13 @@ ggplot(data = barley, aes(x = NF, y = yield)) +
   geom_point() + 
   geom_line(aes(y = fitted(fit.lp)))
 
-## ----confint-fit-lp------------------------------------------------------
+## ----confint-fit-lp-----------------------------------------------------------
 confint(fit.lp)
 
-## ----summary-fit-lp------------------------------------------------------
+## ----summary-fit-lp-----------------------------------------------------------
 summary(fit.lp)
 
-## ----plot-profile--------------------------------------------------------
+## ----plot-profile-------------------------------------------------------------
 ## For the intercept
 plot(profile(fit.lp, "a"))
 ## This one is fairly symetric and the normal approximation is reasonable
@@ -37,20 +37,27 @@ plot(profile(fit.lp, "b"))
 plot(profile(fit.lp, "xs"))
 ## These last parameters are less symetrical
 
-## ----barley-Boot---------------------------------------------------------
-fit.lp.Bt <- Boot(fit.lp)
+## ----barley-boot-nls-0, echo = FALSE------------------------------------------
+fit.lp0 <- nls(yield ~ SSlinp(NF, a, b, xs), data = barley)
+fit.lp <- nls(yield ~ SSlinp(NF, a, b, xs), data = barley, start = coef(fit.lp0))
 
-## ----barley-Boot-asymp---------------------------------------------------
+## ----barley-boot-nls----------------------------------------------------------
+## psim = 3 just adds residuals and does not resample parameters
+fit.lp.Bt <- boot_nls(fit.lp, psim = 3)
+## Or you can use the Boot function in the car package
+
+## ----barley-Boot-asymp--------------------------------------------------------
+## I'm using Boot in the 'car' package here, but it is similar to 'boot_nls'
 fn <- function(x) coef(x)[1] + coef(x)[2] * coef(x)[3]
 fit.lp.Bt.asymp <- Boot(fit.lp, f = fn, labels = "asymptote")
 confint(fit.lp.Bt.asymp)
 hist(fit.lp.Bt.asymp)
 
-## ----barley-Boot-deltaMethod---------------------------------------------
+## ----barley-Boot-deltaMethod--------------------------------------------------
 fit.lp.Dlt.asymp <- deltaMethod(fit.lp, "a + b * xs")
 fit.lp.Dlt.asymp
 
-## ----fit-lp-pred-uncertainty---------------------------------------------
+## ----fit-lp-pred-uncertainty--------------------------------------------------
 ## The object 't' in the bootstrap run has 
 ## the parameter estimate values
 ## First remove missing values
@@ -80,7 +87,7 @@ ggplot() +
   ylab("Yield") + xlab("Nitrogen rate") + 
   ggtitle("Using results from Boot \n and plug-in into linp")
 
-## ----fit-lp-Boot-uncertainty-2-------------------------------------------
+## ----fit-lp-Boot-uncertainty-2------------------------------------------------
 fn2 <- function(x) predict(x, newdata = data.frame(NF = 0:14))
 fit.lp.Bt2 <- Boot(fit.lp, fn2)
 fttd <- na.omit(fit.lp.Bt2$t)
@@ -97,7 +104,7 @@ ggplot() +
   geom_point(data = barley, aes(x = NF, y = yield)) + 
   ylab("Yield") + xlab("Nitrogen rate")
 
-## ----barley-gls2---------------------------------------------------------
+## ----barley-gls2--------------------------------------------------------------
 set.seed(101)
 ## Simplify the dataset to make the set up simpler
 barley2 <- subset(barley, year < 1974)
@@ -107,13 +114,14 @@ fit.lp.gnls2 <- gnls(yield ~ SSlinp(NF, a, b, xs), data = barley2)
 intervals(fit.lp.gnls2)
 
 ## Compare this to the bootstrapping approach
+## R = 200 is too low for bootstrap, this is for illustration only
 fit.lp.gnls2.bt <- boot_nlme(fit.lp.gnls2, R = 200)
 
 summary(fit.lp.gnls2.bt)
 
 confint(fit.lp.gnls2.bt, type = "perc")
 
-## ----gnls-factors--------------------------------------------------------
+## ----gnls-factors-------------------------------------------------------------
 set.seed(101)
 barley2$year.f <- as.factor(barley2$year)
 
@@ -132,7 +140,7 @@ confint(fit.lp.gnls3.bt, type = "perc")
 
 hist(fit.lp.gnls3.bt, 1, ci = "perc")
 
-## ----barley-nlme---------------------------------------------------------
+## ----barley-nlme--------------------------------------------------------------
 set.seed(101)
 barley$year.f <- as.factor(barley$year)
 
@@ -155,7 +163,7 @@ confint(fit.bar.nlme.bt, type = "perc")
 
 hist(fit.bar.nlme.bt, ci = "perc")
 
-## ----Orange--------------------------------------------------------------
+## ----Orange-------------------------------------------------------------------
 data(Orange)
 
 ## This fits a model which considers the fact that 
@@ -179,7 +187,7 @@ ggplot() +
                 fill = "purple", alpha = 0.2) + 
   ggtitle("Orange fit using the logistic: \n 90% confidence band for the mean function")
 
-## ----Orange-psim-0-level-0-----------------------------------------------
+## ----Orange-psim-0-level-0----------------------------------------------------
 fmoL <- nlsList(circumference ~ SSlogis(age, Asym, xmid, scal), data = Orange)
 
 fmo <- nlme(fmoL, random = pdDiag(Asym + xmid + scal ~ 1))
@@ -195,7 +203,7 @@ ggplot(data = dat00) +
   geom_line(aes(x = age, y = prd)) + 
   ggtitle("psim = 0, level = 0")
 
-## ----Orange-psim-1-level-0-----------------------------------------------
+## ----Orange-psim-1-level-0----------------------------------------------------
 sdat10 <- simulate_nlme(fmo, nsim = 100, psim = 1, level = 0, value = "data.frame")
 
 ggplot(data = sdat10) + 
@@ -204,7 +212,7 @@ ggplot(data = sdat10) +
   ggtitle("psim = 1, level = 0") + 
   ylab("circumference")
 
-## ----Orange-psim-1-level-1-----------------------------------------------
+## ----Orange-psim-1-level-1----------------------------------------------------
 sdat11 <- simulate_nlme(fmo, nsim = 100, psim = 1, level = 1, value = "data.frame")
 
 ## We need a tree simulation ID
@@ -220,7 +228,7 @@ ggplot(data = sdat11) +
   ylab("circumference") + 
   theme(legend.position = "none")
 
-## ----Orange-psim-2-level-1-----------------------------------------------
+## ----Orange-psim-2-level-1----------------------------------------------------
 sdat21 <- simulate_nlme(fmo, nsim = 100, psim = 2, level = 1, value = "data.frame")
 
 ## Here I'm plotting points to emphasize that we are making

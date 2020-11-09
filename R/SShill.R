@@ -40,14 +40,14 @@
 NULL
 
 ## define hill1
-hill1Init <- function(mCall, LHS, data){
+hill1Init <- function(mCall, LHS, data, ...){
   
   xy <- sortedXyData(mCall[["x"]], LHS, data)
   if(nrow(xy) < 4){
     stop("Too few distinct input values to fit a hill1")
   }
-  
-  xy2 <- xy[,"x" > 0 & "y" > 0]
+
+  xy2 <- xy[xy$x > 0 & xy$y > 0,]
   y1 <- log(xy2[,"y"]/(1 - xy2[,"y"])) ## When y == 1 it causes Inf 
   y2 <- ifelse(is.finite(y1), y1, NA)
   cfs <- try(coef(lm(y2 ~ log(xy2[,"x"]), na.action = "na.omit")), silent = TRUE)
@@ -70,6 +70,7 @@ hill1Init <- function(mCall, LHS, data){
 hill1 <- function(x, Ka){
   
   if(any(identical(x, 0))) stop("zero x is not allowed")
+  if(any(x < 0)) stop("x should be positive")
   
   .value <- 1 / (1 + (Ka/x))
   
@@ -95,7 +96,7 @@ hill1 <- function(x, Ka){
 SShill1 <- selfStart(hill1, initial = hill1Init, c("Ka"))
 
 ## define hill2
-hill2Init <- function(mCall, LHS, data){
+hill2Init <- function(mCall, LHS, data, ...){
   
   xy <- sortedXyData(mCall[["x"]], LHS, data)
   if(nrow(xy) < 4){
@@ -158,7 +159,7 @@ hill2 <- function(x, Ka, n){
 SShill2 <- selfStart(hill2, initial = hill2Init, c("Ka","n"))
 
 ## define hill3
-hill3Init <- function(mCall, LHS, data){
+hill3Init <- function(mCall, LHS, data, ...){
   
   xy <- sortedXyData(mCall[["x"]], LHS, data)
   if(nrow(xy) < 4){

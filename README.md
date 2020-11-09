@@ -3,8 +3,10 @@
 
 [![CRAN](http://www.r-pkg.org/badges/version/nlraa)](https://CRAN.R-project.org/package=nlraa)
 [![CRAN
-downloads total](https://cranlogs.r-pkg.org/badges/grand-total/nlraa)](https://github.com/metacran/cranlogs.app)
+downloads total](https://cranlogs.r-pkg.org/badges/grand-total/nlraa)](https://github.com/r-hub/cranlogs.app)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/nlraa)](https://cran.r-project.org/package=nlraa)
+
+[Documentation](https://femiguez.github.io/nlraa-docs/index.html)
 
 This package supports the following publications:
 

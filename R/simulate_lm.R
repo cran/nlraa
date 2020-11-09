@@ -5,7 +5,7 @@
 #' @name simulate_lm
 #' @description The function \code{\link[stats]{simulate}} does not consider the 
 #' uncertainty in the estimation of the model parameters. This function will attempt 
-#' to do this
+#' to do this.
 #' @param object object of class \code{\link[stats]{lm}}
 #' @param psim parameter simulation level (an integer, 0, 1, 3, 4).
 #' @param nsim number of simulations to perform
@@ -100,7 +100,7 @@ simulate_lm_one <- function(object, psim = 1,
     rsds <- sample(rsd0, size = n, replace = TRUE)      
   }
   if(resid.type == "normal"){
-    rsds <- stats::rnorm(n = n, mean = 0, sd = sigma(object))
+    rsds <- stats::rnorm(n = n, mean = 0, sd = stats::sigma(object))
   }
   if(resid.type == "wild"){
     rsds <- sample(c(-1, 1), size = n, replace = TRUE) * rsd0
