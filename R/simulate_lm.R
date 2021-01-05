@@ -7,10 +7,12 @@
 #' uncertainty in the estimation of the model parameters. This function will attempt 
 #' to do this.
 #' @param object object of class \code{\link[stats]{lm}}
-#' @param psim parameter simulation level (an integer, 0, 1, 3, 4).
+#' @param psim parameter simulation level (an integer, 0, 1, 2, 3 or 4).
 #' @param nsim number of simulations to perform
-#' @param resid.type type of residual to include (resample, normal or wild)
+#' @param resid.type type of residual to include (none, resample, normal or wild)
 #' @param value either \sQuote{matrix} or \sQuote{data.frame}
+#' @param data the data argument might be needed when using this function inside user defined functions.
+#' At least it is expected to be safer.
 #' @param ... additional arguments (none used at the moment)
 #' @return matrix or data.frame with responses
 #' @details 
@@ -26,6 +28,7 @@
 #' They are either resampled, simulated from a normal distribution or \sQuote{wild} where the
 #' Rademacher distribution is used (\url{https://en.wikipedia.org/wiki/Rademacher_distribution}).
 #' Resampled and normal both assume iid, but \sQuote{normal} makes the stronger assumption of normality.
+#' When psim = 2 and resid.type = none, \code{\link{simulate}} is used instead.
 #' \sQuote{wild} does not assume constant variance, but it assumes symmetry.
 #' @references See
 #' \dQuote{Inference Based on the Wild Bootstrap} James G. MacKinnon
@@ -51,52 +54,78 @@
 #' 
 
 simulate_lm <- function(object, psim = 1, nsim = 1, 
-                        resid.type = c("resample","normal","wild"),
-                        value = c("matrix","data.frame"), ...){
+                        resid.type = c("none", "resample","normal","wild"),
+                        value = c("matrix","data.frame"), 
+                        data = NULL, ...){
 
   if(!inherits(object, "lm"))
-    stop("only for objects of class 'lm' ")
-  
-  if(!is.null(object$weights))
-    warning("weights will be ignored")
+    stop("only for objects which inherit class 'lm' ")
   
   value <- match.arg(value)
   resid.type <- match.arg(resid.type)
+
+  xargs <- list(...)
+
+  if(!is.null(xargs$newdata) && psim > 1)
+    stop("'newdata' is not compatible with 'psim > 1'")  
   
-  ans.mat <- matrix(nrow = length(fitted(object)), ncol = nsim)
+  if(is.null(xargs$newdata) && is.null(data)){
+    newdata <- try(eval(getCall(object)$data), silent = TRUE)
+    if(is.null(newdata)) stop("data not found. If you are using simulate_lm inside another function, please pass the data")
+  }else{
+    if(!is.null(xargs$newdata) && !is.null(data))
+      stop("either supply 'data' or 'newdata'")
+    
+    if(!is.null(data)){
+      newdata <- data
+    }else{
+      newdata <- xargs$newdata
+    }    
+  }
+  
+  nr <- ifelse(is.null(newdata), stats::nobs(object), nrow(newdata))
+  ans.mat <- matrix(nrow = nr, ncol = nsim)  
   
   ## They say that replicate is faster than this,
   ## but not when storage is pre-allocated
   for(i in 1:nsim){
-    ans.mat[,i] <- simulate_lm_one(object, psim = psim, resid.type = resid.type)
+      ans.mat[,i] <- simulate_lm_one(object, psim = psim, resid.type = resid.type, 
+                                     newdata = newdata)  
   }
   
   if(value == "matrix"){
     colnames(ans.mat) <- paste0("sim_",1:nsim)
     return(ans.mat)
   }else{
-    dfr <- eval(getCall(object)$data)
-    if(is.null(dfr)) stop("data argument should be supplied")
+    if(is.null(xargs$newdata)){
+      dfr <- eval(getCall(object)$data)
+      if(is.null(dfr)) stop("'data' argument should be supplied")      
+    }else{
+      dfr <- newdata
+    }
     ## I think this is guaranteed to exist
     ## but it can be weird
     ans.dat <- data.frame(ii = as.factor(rep(1:nsim, each = nrow(dfr))),
                           dfr,
                           sim.y = c(ans.mat), 
-                          row.names = 1:c(nsim * length(fitted(object))))
+                          row.names = 1:c(nsim * nr))
     return(ans.dat)
   }
 }
 
 simulate_lm_one <- function(object, psim = 1, 
-                            resid.type = c("resample","normal","wild")){
+                            resid.type = c("none", "resample","normal","wild"), 
+                            newdata = NULL){
   
   resid.type <- match.arg(resid.type)
   
-  X <- stats::model.matrix(object)
-  n <- length(fitted(object))
+  X <- stats::model.matrix(object, data = newdata)
+  n <- stats::nobs(object)
   rsd0 <- stats::resid(object)
   
-  if(resid.type == "resample"){
+  if(is.null(newdata)) stop("'newdata' is needed for this function")
+  
+  if(resid.type %in% c("none", "resample")){
     rsds <- sample(rsd0, size = n, replace = TRUE)      
   }
   if(resid.type == "normal"){
@@ -118,8 +147,12 @@ simulate_lm_one <- function(object, psim = 1,
     ans <- X %*% betav
   }
   
-  ## Simulate from beta and add residuals
-  if(psim == 2){
+  ## This is the 'default' simulate method, which also seems to work for 'glm' objects
+  if(psim == 2 && resid.type == "none"){
+    ans <- simulate(object, nsim = 1)[,1]
+  }
+    
+  if(psim == 2 && resid.type != "none"){
     betav <- MASS::mvrnorm(mu = coef(object), Sigma = vcov(object))  
     ans <- X %*% betav + rsds
   }
@@ -133,7 +166,9 @@ simulate_lm_one <- function(object, psim = 1,
   }
   
   ## What simulate.lm does is just simulate residuals (I think)
+  ## This does not work for objects of class 'glm' or 'gam'
   if(psim == 4){
+    if(inherits(object, "glm")) stop("'glm' object are not supported with this option")
     ans <- stats::fitted(object) + rsds 
   }
   

@@ -23,7 +23,8 @@
 #' @title Simulate fitted values from an object of class \code{\link[nlme]{gls}}
 #' @description Simulate values from an object of class gls. Unequal variances, 
 #' as modeled using the \sQuote{weights} option are supported, and there is experimental
-#' code for dealing with the \sQuote{correlation} structure. 
+#' code for dealing with the \sQuote{correlation} structure. This generates just one simulation
+#' from these type of models. To generate multiple simulations use \code{\link{simulate_lme}}
 #' @name simulate_gls
 #' @param object object of class \code{\link[nlme]{gls}}
 #' @param psim parameter simulation level, 0: for fitted values, 1: for simulation from 
@@ -32,13 +33,14 @@
 #' will appear similar to the observed values
 #' @param na.action default \sQuote{na.fail}. See \code{\link[nlme]{predict.gls}}
 #' @param naPattern missing value pattern. See \code{\link[nlme]{predict.gls}}
+#' @param data the data argument is needed when using this function inside user defined functions.
 #' @param ... additional arguments (it is possible to supply a newdata this way)
 #' @return It returns a vector with simulated values with length equal to the number of rows 
 #' in the original data
 #' @details It uses function \code{\link[MASS]{mvrnorm}} to generate new values for the coefficients
 #' of the model using the Variance-Covariance matrix \code{\link{vcov}}. This variance-covariance matrix 
 #' refers to the one for the parameters 'beta', not the one for the residuals.
-#' @seealso \code{\link[nlme]{predict.gls}}
+#' @seealso \code{\link[nlme]{predict.gls}} \code{\link{simulate_lme}}
 #' @export
 #' @examples 
 #' \donttest{
@@ -55,7 +57,7 @@
 #' sim <- simulate_gls(fit.gls)
 #' }
 
-simulate_gls <- function(object, psim = 1, na.action = na.fail, naPattern = NULL, ...){
+simulate_gls <- function(object, psim = 1, na.action = na.fail, naPattern = NULL, data = NULL, ...){
 
   if(!inherits(object, "gls")) stop("This function is only for 'gls' objects")
   
@@ -66,7 +68,13 @@ simulate_gls <- function(object, psim = 1, na.action = na.fail, naPattern = NULL
   if(!is.null(args$newdata)){
     newdata <- args$newdata
   }else{
-    newdata <- nlme::getData(object)  
+    if(is.null(data)){
+      newdata <- try(nlme::getData(object), silent = TRUE)
+      if(inherits(newdata, "try-error") || is.null(newdata)) 
+        stop("'data' argument is required. It is likely you are using simulate_gls inside another function")
+    }else{
+      newdata <- data
+    } 
   } 
 
   form <- getCovariateFormula(object)
@@ -121,7 +129,7 @@ simulate_gls <- function(object, psim = 1, na.action = na.fail, naPattern = NULL
       rsds <- rsds.std * attr(residuals(object), "std") ## This last term is 'sigma'
     }else{
       ## This is one way of doing this, but might not be the best
-      var.cov.err <- var_cov(object, sparse = TRUE)
+      var.cov.err <- var_cov(object, sparse = TRUE, data = newdata)
       ## rsds <- MASS::mvrnorm(mu = residuals(object), Sigma = var.cov.err)
       ## An alternative is to do a Cholesky decomposition first
       ## Since var.cov.err is sparse using the Matrix package might be
@@ -134,7 +142,7 @@ simulate_gls <- function(object, psim = 1, na.action = na.fail, naPattern = NULL
   val <- c(X[, names(cf), drop = FALSE] %*% cf)
   
   ## If psim == 2, we add residuals
-  if(psim == 2) val <- val + rsds
+  if(psim == 2) val <- as.vector(val + rsds)
   
   lab <- "Predicted values"
   if (!is.null(aux <- attr(object, "units")$y)) {

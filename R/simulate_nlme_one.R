@@ -31,6 +31,7 @@
 #' @param asList optional logical value. See \code{\link[nlme]{predict.nlme}}
 #' @param na.action missing value action. See \code{\link[nlme]{predict.nlme}}
 #' @param naPattern missing value pattern. See \code{\link[nlme]{predict.nlme}}
+#' @param data the data argument is needed when using this function inside user defined functions.
 #' @param ... additional arguments to be passed (possible to pass newdata this way)
 #' @details It uses function \code{\link[MASS]{mvrnorm}} to generate new values for the coefficients
 #' of the model using the Variance-Covariance matrix \code{\link{vcov}}
@@ -38,7 +39,7 @@
 #' the original data, unless newdata is provided.
 
 simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.action = na.fail,
-           naPattern = NULL, ...){
+           naPattern = NULL, data = NULL, ...){
     ##
     ## method for predict() designed for objects inheriting from class nlme
     ##
@@ -50,7 +51,9 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
   Q <- object$dims$Q
 
   if(!missing(level) && psim == 2 && level < Q)
-    stop("psim = 2 whould only be used for the deepest level of the hierarchy")
+    stop("psim = 2 should only be used for the deepest level of the hierarchy")
+  
+  if(level > Q) stop("level cannot be greater than Q")
     
   o.level <- level
   
@@ -69,7 +72,13 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
   if(!is.null(args$newdata)){
     newdata <- args$newdata
   }else{
-    newdata <- nlme::getData(object)  
+    if(is.null(data)){
+      newdata <- try(nlme::getData(object), silent = TRUE)
+      if(inherits(newdata, "try-error") || is.null(newdata)) 
+        stop("'data' argument is required. It is likely you are using simulate_nlme_one inside another function")
+    }else{
+      newdata <- data
+    }  
   } 
     
   maxQ <- max(level)			# maximum level for predictions
@@ -218,7 +227,7 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
         ## Much, much more computationally demanding than when 
         ## residuals are not correlated, which should be the case
         ## for most NLME models
-        var.cov.err <- var_cov(object, sparse = TRUE)
+        var.cov.err <- var_cov(object, sparse = TRUE, data = newdata)
         chol.var.cov.err <- Matrix::chol(var.cov.err)
         rsds <- Matrix::as.matrix(chol.var.cov.err %*% rnorm(nrow(chol.var.cov.err)))
       }

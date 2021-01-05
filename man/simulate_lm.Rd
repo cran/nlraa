@@ -8,21 +8,25 @@ simulate_lm(
   object,
   psim = 1,
   nsim = 1,
-  resid.type = c("resample", "normal", "wild"),
+  resid.type = c("none", "resample", "normal", "wild"),
   value = c("matrix", "data.frame"),
+  data = NULL,
   ...
 )
 }
 \arguments{
 \item{object}{object of class \code{\link[stats]{lm}}}
 
-\item{psim}{parameter simulation level (an integer, 0, 1, 3, 4).}
+\item{psim}{parameter simulation level (an integer, 0, 1, 2, 3 or 4).}
 
 \item{nsim}{number of simulations to perform}
 
-\item{resid.type}{type of residual to include (resample, normal or wild)}
+\item{resid.type}{type of residual to include (none, resample, normal or wild)}
 
 \item{value}{either \sQuote{matrix} or \sQuote{data.frame}}
+
+\item{data}{the data argument might be needed when using this function inside user defined functions.
+At least it is expected to be safer.}
 
 \item{...}{additional arguments (none used at the moment)}
 }
@@ -50,6 +54,7 @@ The residual type (resid.type) controls how the residuals are generated.
 They are either resampled, simulated from a normal distribution or \sQuote{wild} where the
 Rademacher distribution is used (\url{https://en.wikipedia.org/wiki/Rademacher_distribution}).
 Resampled and normal both assume iid, but \sQuote{normal} makes the stronger assumption of normality.
+When psim = 2 and resid.type = none, \code{\link{simulate}} is used instead.
 \sQuote{wild} does not assume constant variance, but it assumes symmetry.
 }
 \examples{

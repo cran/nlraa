@@ -242,3 +242,45 @@ ggplot(data = sdat21) +
   ylab("circumference") + 
   theme(legend.position = "none")
 
+## ----Orange-predict-nlme------------------------------------------------------
+## All models should be fitted using Maximum Likelihood
+fm.L <- nlme(circumference ~ SSlogis(age, Asym, xmid, scal), 
+               random = pdDiag(Asym + xmid + scal ~ 1), 
+               method = "ML", data = Orange)
+fm.G <- nlme(circumference ~ SSgompertz(age, Asym, b2, b3), 
+               random = pdDiag(Asym + b2 + b3 ~ 1), 
+               method = "ML", data = Orange)
+fm.F <- nlme(circumference ~ SSfpl(age, A, B, xmid, scal), 
+               random = pdDiag(A + B + xmid + scal ~ 1), 
+               method = "ML", data = Orange)
+fm.B <- nlme(circumference ~ SSbg4rp(age, w.max, lt.e, ldtm, ldtb), 
+               random = pdDiag(w.max + lt.e + ldtm + ldtb ~ 1), 
+               method = "ML", data = Orange)
+## Let's compare the models
+print(IC_tab(fm.L, fm.G, fm.F, fm.B), digits = 2)
+
+## ----Orange-predict-nlme-2----------------------------------------------------
+## Each model prediction is weighted according to their AIC values
+prd <- predict_nlme(fm.L, fm.G, fm.F, fm.B)
+
+ggplot(data = Orange, aes(x = age, y = circumference)) + 
+  geom_point() + 
+  geom_line(aes(y = predict(fm.L, level = 0), color = "Logistic")) +
+  geom_line(aes(y = predict(fm.G, level = 0), color = "Gompertz")) +
+  geom_line(aes(y = predict(fm.F, level = 0), color = "4P-Logistic")) +  
+  geom_line(aes(y = predict(fm.B, level = 0), color = "Beta")) +
+  geom_line(aes(y = prd, color = "Avg. Model"), size = 1.2)
+
+## ----Orange-predict-nlme-confint----------------------------------------------
+prdc <- predict_nlme(fm.L, fm.G, fm.F, fm.B, interval = "confidence", level = 0.90)
+OrangeA <- cbind(Orange, prdc)
+
+ggplot(data = OrangeA, aes(x = age, y = circumference)) + 
+  geom_point() + 
+  geom_line(aes(y = predict(fm.L, level = 0), color = "Logistic")) +
+  geom_line(aes(y = predict(fm.G, level = 0), color = "Gompertz")) +
+  geom_line(aes(y = predict(fm.F, level = 0), color = "4P-Logistic")) +  
+  geom_line(aes(y = predict(fm.B, level = 0), color = "Beta")) +
+  geom_line(aes(y = prd, color = "Avg. Model"), size = 1.2) + 
+  geom_ribbon(aes(ymin = Q5, ymax = Q95), fill = "purple", alpha = 0.3)
+

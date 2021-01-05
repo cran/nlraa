@@ -37,6 +37,15 @@ ggplot(data = barley, aes(x = NF, y = yield, color = as.factor(year))) +
   xlab("Nitrogen fertilizer (g/m^2)") +
   ylab("Grain (g/m^2)")
 
+## ----maizeleafext-------------------------------------------------------------
+## Response of barley to nitrogen fertilizer
+## There is a barley dataset also in package 'lattice'
+data(maizeleafext, package = "nlraa")
+ggplot(data = maizeleafext, aes(x = temp, y = rate)) +
+  geom_point() + geom_line() + 
+  xlab("Temperature (C)") +
+  ylab("Leaf Extension Rate (relative)")
+
 ## ---- eval = FALSE------------------------------------------------------------
 #  ## Error in nls(y ~ SSratio(x, a, b, c, d), data = dat) :
 #  ##  step factor 0.000488281 reduced below 'minFactor' of 0.000976562

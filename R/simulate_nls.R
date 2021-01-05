@@ -11,19 +11,24 @@
 #' uncertainty in the residual standard error only (sigma) and fixing the
 #' parameter estimates at their original value; this will result in simulations 
 #' similar to the observed values.
-#' @param resid.type either \dQuote{resample}, \dQuote{normal} or \dQuote{wild}.
+#' @param resid.type either \sQuote{none}, \dQuote{resample}, \dQuote{normal} or \dQuote{wild}.
 #' @param value either \sQuote{matrix} or \sQuote{data.frame}
+#' @param data the data argument is needed when using this function inside user defined functions.
 #' @param ... additional arguments (it is possible to supply a newdata this way)
 #' @return It returns a vector with simulated values with length equal to the number of rows 
 #' in the original data
 #' @details It uses function \code{\link[MASS]{mvrnorm}} to generate new values for the coefficients
 #' of the model using the Variance-Covariance matrix \code{\link{vcov}}. This variance-covariance matrix 
-#' refers to the one for the parameters 'beta', not the one for the residuals.
-#' @seealso \code{\link[nlme]{predict.gnls}}
+#' refers to the one for the parameters \sQuote{beta}, not the one for the residuals.
+#' @note The default behavior is that simulations are perfomed for the mean function only.
+#' When \sQuote{psim = 2} this function will silently choose \sQuote{resample} as the 
+#' \sQuote{resid.type}. This is not ideal design for this function, but I made this choice for 
+#' compatibility with other types of simulation originating from \code{\link[stats]{glm}} and
+#' \code{\link[mgcv]{gam}}.
+#' @seealso \code{\link[nlme]{predict.gnls}}, \code{\link{predict_nls}}
 #' @export
 #' @examples 
 #' \donttest{
-#' require(nlme)
 #' data(barley, package = "nlraa")
 #' 
 #' fit <- nls(yield ~ SSlinp(NF, a, b, xs), data = barley)
@@ -34,8 +39,9 @@
 simulate_nls <- function(object, 
                          nsim = 1, 
                          psim = 1, 
-                         resid.type = c("resample", "normal", "wild"),
-                         value = c("matrix", "data.frame"),...){
+                         resid.type = c("none", "resample", "normal", "wild"),
+                         value = c("matrix", "data.frame"), 
+                         data = NULL, ...){
   
   ## Error checking
   if(!inherits(object, "nls")) stop("object should be of class 'nls' ")
@@ -44,17 +50,29 @@ simulate_nls <- function(object,
   
   resid.type <- match.arg(resid.type)
   
-  sim.mat <- matrix(ncol = nsim, nrow = length(fitted(object)))
+  if(resid.type == "none" && psim == 2) resid.type <- "resample"
+  
+  if(is.null(list(...)$newdata)){
+    sim.mat <- matrix(ncol = nsim, nrow = stats::nobs(object))
+  }else{
+    sim.mat <- matrix(ncol = nsim, nrow = nrow(list(...)$newdata))  
+  } 
   
   for(i in seq_len(nsim)){
-      sim.mat[,i] <- as.vector(simulate_nls_one(object, psim = psim, resid.type = resid.type, ...))
+      sim.mat[,i] <- as.vector(simulate_nls_one(object, psim = psim, resid.type = resid.type, data = data, ...))
   }
   
   if(value == "matrix"){
     colnames(sim.mat) <- paste0("sim_",1:nsim)
     return(sim.mat)  
   }else{
-    dat <- eval(object$call$data)
+    xargs <- list(...)
+    if(is.null(xargs$newdata)){
+      dat <- eval(object$call$data)
+      if(is.null(dat)) stop("'data' argument should be supplied")      
+    }else{
+      dat <- xargs$newdata
+    }
     adat <- data.frame(ii = as.factor(rep(1:nsim, each = nrow(dat))),
                        dat,
                        sim.y = c(sim.mat),
@@ -65,8 +83,9 @@ simulate_nls <- function(object,
 
 simulate_nls_one <- function(object, 
                              psim = 1, 
-                             resid.type = c("resample","normal","wild"),
-                             na.action = na.fail, naPattern = NULL, ...){
+                             resid.type = c("none", "resample","normal","wild"),
+                             na.action = na.fail, naPattern = NULL, 
+                             data = NULL, ...){
   ##
   ## method for predict() designed for objects inheriting from class gnls
   ##
@@ -75,13 +94,21 @@ simulate_nls_one <- function(object,
   mCall <- object$call
   
   resid.type <- match.arg(resid.type)
+  if(resid.type == "none") resid.type <- "resample"
   
   ## Is this more robust?
   args <- list(...)
   if(!is.null(args$newdata)){
     ndata <- args$newdata
+    if(psim > 1) stop("'newdata' is not compatible with psim > 1")
   }else{
-    ndata <- eval(object$data)      
+    if(is.null(data)){
+      ndata <- eval(object$data)      
+      if(is.null(ndata)) 
+        stop("'data' argument is required. It is likely you are using simulate_nls inside another function")
+    }else{
+      ndata <- data
+    } 
   } 
   
   mfArgs <- list(formula =
@@ -168,7 +195,7 @@ simulate_nls_one <- function(object,
   if(psim == 2){
     prs <- MASS::mvrnorm(n = 1, mu = coef(object), Sigma = vcov(object))
     ## Simply add residuals
-    n <- length(fitted(object))
+    n <- stats::nobs(object)
     rsd0 <- stats::resid(object)
     if(resid.type == "resample"){
       rsds <- sample(rsd0, size = n, replace = TRUE)      
@@ -184,7 +211,7 @@ simulate_nls_one <- function(object,
   if(psim == 3){
     prs <- coef(object)
     ## Simply add residuals
-    n <- length(fitted(object))
+    n <- stats::nobs(object)
     rsd0 <- stats::resid(object)
     if(resid.type == "resample"){
       rsds <- sample(rsd0, size = n, replace = TRUE)      

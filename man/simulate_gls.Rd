@@ -4,7 +4,14 @@
 \alias{simulate_gls}
 \title{Simulate fitted values from an object of class \code{\link[nlme]{gls}}}
 \usage{
-simulate_gls(object, psim = 1, na.action = na.fail, naPattern = NULL, ...)
+simulate_gls(
+  object,
+  psim = 1,
+  na.action = na.fail,
+  naPattern = NULL,
+  data = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{object of class \code{\link[nlme]{gls}}}
@@ -18,6 +25,8 @@ will appear similar to the observed values}
 
 \item{naPattern}{missing value pattern. See \code{\link[nlme]{predict.gls}}}
 
+\item{data}{the data argument is needed when using this function inside user defined functions.}
+
 \item{...}{additional arguments (it is possible to supply a newdata this way)}
 }
 \value{
@@ -27,7 +36,8 @@ in the original data
 \description{
 Simulate values from an object of class gls. Unequal variances, 
 as modeled using the \sQuote{weights} option are supported, and there is experimental
-code for dealing with the \sQuote{correlation} structure.
+code for dealing with the \sQuote{correlation} structure. This generates just one simulation
+from these type of models. To generate multiple simulations use \code{\link{simulate_lme}}
 }
 \details{
 This function is based on \code{\link[nlme]{predict.gls}} function
@@ -52,5 +62,5 @@ sim <- simulate_gls(fit.gls)
 }
 }
 \seealso{
-\code{\link[nlme]{predict.gls}}
+\code{\link[nlme]{predict.gls}} \code{\link{simulate_lme}}
 }

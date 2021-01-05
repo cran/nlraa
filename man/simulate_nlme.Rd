@@ -9,6 +9,7 @@ simulate_nlme(
   nsim = 1,
   psim = 1,
   value = c("matrix", "data.frame"),
+  data = NULL,
   ...
 )
 }
@@ -21,12 +22,14 @@ simulate_nlme(
 
 \item{value}{whether to return a matrix (default) or an augmented data frame}
 
+\item{data}{the data argument is needed when using this function inside user defined functions.}
+
 \item{...}{additional arguments to be passed to either \code{\link{simulate_gnls}} or \code{\link{simulate_nlme_one}}}
 }
 \value{
 It returns a matrix with simulated values from the original object
 with number of rows equal to the number of rows of \code{\link{fitted}} and number
-of columns equal to the number of simulated samples (\sQuote{nsim}). In the case of 'data.frame'
+of columns equal to the number of simulated samples (\sQuote{nsim}). In the case of \sQuote{data.frame}
 it returns an augmented data.frame, which can potentially be a very large object, but which
 makes furhter plotting more convenient.
 }
@@ -40,9 +43,8 @@ model outputs.
 }
 \examples{
 \donttest{
-require(car)
 require(nlme)
-data(barley)
+data(barley, package = "nlraa")
 barley2 <- subset(barley, year < 1974)
 fit.lp.gnls2 <- gnls(yield ~ SSlinp(NF, a, b, xs), data = barley2)
 barley2$year.f <- as.factor(barley2$year)
