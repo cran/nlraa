@@ -12,49 +12,10 @@
 
 <meta name="author" content="Fernando Miguez" />
 
-<meta name="date" content="2021-01-04" />
+<meta name="date" content="2021-04-21" />
 
 <title>nlraa: An R package for Nonlinear Regression Applications in Agricultural Research</title>
 
-<style type="text/css">
-a.anchor-section {margin-left: 10px; visibility: hidden; color: inherit;}
-a.anchor-section::before {content: '#';}
-.hasAnchor:hover a.anchor-section {visibility: visible;}
-</style>
-<script>// Anchor sections v1.0 written by Atsushi Yasumoto on Oct 3rd, 2020.
-document.addEventListener('DOMContentLoaded', function() {
-  // Do nothing if AnchorJS is used
-  if (typeof window.anchors === 'object' && anchors.hasOwnProperty('hasAnchorJSLink')) {
-    return;
-  }
-
-  const h = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-
-  // Do nothing if sections are already anchored
-  if (Array.from(h).some(x => x.classList.contains('hasAnchor'))) {
-    return null;
-  }
-
-  // Use section id when pandoc runs with --section-divs
-  const section_id = function(x) {
-    return ((x.classList.contains('section') || (x.tagName === 'SECTION'))
-            ? x.id : '');
-  };
-
-  // Add anchors
-  h.forEach(function(x) {
-    const id = x.id || section_id(x.parentElement);
-    if (id === '') {
-      return null;
-    }
-    let anchor = document.createElement('a');
-    anchor.href = '#' + id;
-    anchor.classList = ['anchor-section'];
-    x.classList.add('hasAnchor');
-    x.appendChild(anchor);
-  });
-});
-</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -66,7 +27,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
@@ -152,6 +120,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -349,7 +318,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">nlraa: An R package for Nonlinear Regression Applications in Agricultural Research</h1>
 <h4 class="author">Fernando Miguez</h4>
-<h4 class="date">2021-01-04</h4>
+<h4 class="date">2021-04-21</h4>
 
 
 
@@ -391,6 +360,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <li>SSplin (plateau-linear)</li>
 <li>SSquadp (quadratic-plateau)</li>
 <li>SSpquad (plateau-quadratic)</li>
+<li>SSquadp3 (quadratic-plateau-3-parameters)</li>
+<li>SSpquad3 (plateau-quadratic-3-parameters)</li>
 <li>SSblin (bilinear)</li>
 <li>SSexpf (exponential function)</li>
 <li>SSexpfp (exponential-plateau)</li>
@@ -416,8 +387,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## [16] &quot;SSexpfp&quot;     &quot;SSexplin&quot;    &quot;SSfol&quot;       &quot;SSfpl&quot;       &quot;SSgompertz&quot; 
 ## [21] &quot;SShill1&quot;     &quot;SShill2&quot;     &quot;SShill3&quot;     &quot;SSlinp&quot;      &quot;SSlogis&quot;    
 ## [26] &quot;SSlogis5&quot;    &quot;SSmicmen&quot;    &quot;SSnrh&quot;       &quot;SSpexpf&quot;     &quot;SSplin&quot;     
-## [31] &quot;SSpquad&quot;     &quot;SSprofd&quot;     &quot;SSquadp&quot;     &quot;SSratio&quot;     &quot;SSricker&quot;   
-## [36] &quot;SSsharp&quot;     &quot;SStemp3&quot;     &quot;SStrlin&quot;     &quot;SSweibull&quot;</code></pre>
+## [31] &quot;SSpquad&quot;     &quot;SSpquad3&quot;    &quot;SSprofd&quot;     &quot;SSquadp&quot;     &quot;SSquadp3&quot;   
+## [36] &quot;SSratio&quot;     &quot;SSricker&quot;    &quot;SSsharp&quot;     &quot;SStemp3&quot;     &quot;SStrlin&quot;    
+## [41] &quot;SSweibull&quot;</code></pre>
 </div>
 </div>
 <div id="prediction-simulation-and-bootstrap" class="section level2">

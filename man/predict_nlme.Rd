@@ -2,9 +2,20 @@
 % Please edit documentation in R/predict_nlme.R
 \name{predict_nlme}
 \alias{predict_nlme}
+\alias{predict_lme}
 \title{Average predictions from several (non)linear models based on IC weights}
 \usage{
 predict_nlme(
+  ...,
+  criteria = c("AIC", "AICc", "BIC"),
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95,
+  nsim = 1000,
+  plevel = 0,
+  newdata = NULL
+)
+
+predict_lme(
   ...,
   criteria = c("AIC", "AICc", "BIC"),
   interval = c("none", "confidence", "prediction"),
@@ -35,10 +46,12 @@ numeric vector of the same length as the fitted object.
 \description{
 Computes weights based on AIC, AICc, or BIC and it generates weighted predictions by
 the relative value of the IC values
+
+predict function for objects of class \code{\link[nlme]{lme}}
 }
 \note{
-all the nls or lm objects should be fitted to the same data. The weights are
-based on the inverse of the IC value.
+all the objects should be fitted to the same data. The weights are
+based on the IC value.
 }
 \examples{
 \donttest{
@@ -77,5 +90,5 @@ ggplot(data = Orange, aes(x = age, y = circumference)) +
 }
 }
 \seealso{
-\code{\link{predict.lme}} \code{\link{predict.gnls}}
+\code{\link{predict.nlme}} \code{\link{predict.lme}} \code{\link{predict.gnls}}
 }

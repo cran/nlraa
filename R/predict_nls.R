@@ -12,8 +12,7 @@
 #' @param resid.type either \sQuote{none}, \dQuote{resample}, \dQuote{normal} or \dQuote{wild}.
 #' @param newdata new data frame for predictions
 #' @return numeric vector of the same length as the fitted object.
-#' @note all the \code{\link[stats]{nls}} or \code{\link[stats]{lm}} 
-#' objects should be fitted to the same data. Weights are
+#' @note all the objects should be fitted to the same data. Weights are
 #' based on the chosen IC value (exp(-0.5 * IC)). 
 #' For models of class \code{\link[mgcv]{gam}} there is very limited support.
 #' @seealso \code{\link[stats]{predict.lm}}, \code{\link[stats]{predict.nls}}, \code{\link[mgcv]{predict.gam}}, \code{\link{simulate_nls}}, \code{\link{simulate_gam}}
@@ -29,14 +28,15 @@
 #' fm.Q <- lm(yield ~ NF + I(NF^2), data = barley)
 #' fm.A <- nls(yield ~ SSasymp(NF, Asym, R0, lrc), data = barley)
 #' fm.LP <- nls(yield ~ SSlinp(NF, a, b, xs), data = barley)
+#' fm.QP <- nls(yield ~ SSquadp3(NF, a, b, c), data = barley)
 #' fm.BL <- nls(yield ~ SSblin(NF, a, b, xs, c), data = barley)
-#' fm.G <- gam(yield ~ NF + s(NF^2, k = 3), data = barley)
+#' fm.G <- gam(yield ~ s(NF, k = 6), data = barley)
 #' 
 #' ## Print the table with weights
-#' IC_tab(fm.L, fm.Q, fm.A, fm.LP, fm.BL, fm.G)
+#' IC_tab(fm.L, fm.Q, fm.A, fm.LP, fm.QP, fm.BL, fm.G)
 #' 
 #' ## Each model prediction is weighted according to their AIC values
-#' prd <- predict_nls(fm.L, fm.Q, fm.A, fm.LP, fm.BL, fm.G)
+#' prd <- predict_nls(fm.L, fm.Q, fm.A, fm.LP, fm.QP, fm.BL, fm.G)
 #' 
 #' ggplot(data = barley, aes(x = NF, y = yield)) + 
 #'   geom_point() + 
@@ -44,6 +44,7 @@
 #'   geom_line(aes(y = fitted(fm.Q), color = "Quadratic")) +
 #'   geom_line(aes(y = fitted(fm.A), color = "Asymptotic")) +  
 #'   geom_line(aes(y = fitted(fm.LP), color = "Linear-plateau")) + 
+#'   geom_line(aes(y = fitted(fm.QP), color = "Quadratic-plateau")) + 
 #'   geom_line(aes(y = fitted(fm.BL), color = "Bi-linear")) + 
 #'   geom_line(aes(y = fitted(fm.G), color = "GAM")) + 
 #'   geom_line(aes(y = prd, color = "Avg. Model"), size = 1.2)
