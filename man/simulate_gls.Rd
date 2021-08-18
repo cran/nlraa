@@ -25,7 +25,8 @@ will appear similar to the observed values}
 
 \item{naPattern}{missing value pattern. See \code{\link[nlme]{predict.gls}}}
 
-\item{data}{the data argument is needed when using this function inside user defined functions.}
+\item{data}{the data argument is needed when using this function inside user defined functions.
+It should be identical to the data used to fit the model.}
 
 \item{...}{additional arguments (it is possible to supply a newdata this way)}
 }
@@ -44,7 +45,7 @@ This function is based on \code{\link[nlme]{predict.gls}} function
 
 It uses function \code{\link[MASS]{mvrnorm}} to generate new values for the coefficients
 of the model using the Variance-Covariance matrix \code{\link{vcov}}. This variance-covariance matrix 
-refers to the one for the parameters 'beta', not the one for the residuals.
+refers to the one for the parameters \sQuote{beta}, not the one for the residuals.
 }
 \examples{
 \donttest{

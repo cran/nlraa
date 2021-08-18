@@ -25,7 +25,9 @@
 #' @param object object of class \code{\link[nlme]{nlme}}
 #' @param psim parameter simulation level, 0: for fitted values, 1: for simulation from 
 #' fixed parameters (assuming a fixed vcov matrix), 2: for simulation considering the 
-#' residual error (sigma), this returns data which will appear similar to the observed values
+#' residual error (sigma), this returns data which will appear similar to the observed values.
+#' Currently, working on psim = 3, which will simulate a new set of random effects. This
+#' can be useful when computing prediction intervals at the subject-level.
 #' @param level level at which simulations are performed. See \code{\link[nlme]{predict.nlme}}. 
 #' An important difference is that for this function multiple levels are not allowed.
 #' @param asList optional logical value. See \code{\link[nlme]{predict.nlme}}
@@ -50,8 +52,8 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
   
   Q <- object$dims$Q
 
-  if(!missing(level) && psim == 2 && level < Q)
-    stop("psim = 2 should only be used for the deepest level of the hierarchy")
+  if(!missing(level) && psim > 1 && level < Q)
+    stop("psim = 2 or psim = 3, should only be used for the deepest level of the hierarchy")
   
   if(level > Q) stop("level cannot be greater than Q")
     
@@ -71,12 +73,21 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
   args <- list(...)
   if(!is.null(args$newdata)){
     newdata <- args$newdata
+    if(!is.null(object$modelStruct$corStruct) && psim > 1)
+      stop("At this point 'newdata' is not compatible with psim > 1 and correlated residuals",
+           call. = FALSE)
   }else{
     if(is.null(data)){
       newdata <- try(nlme::getData(object), silent = TRUE)
       if(inherits(newdata, "try-error") || is.null(newdata)) 
         stop("'data' argument is required. It is likely you are using simulate_nlme_one inside another function")
     }else{
+      if(object$dims$N != nrow(data)){
+        stop("Number of rows in data argument does not match the original data \n
+              The data argument should only be used to pass the same data.frame \n 
+              used to fit the model",
+             call. = FALSE)
+      }
       newdata <- data
     }  
   } 
@@ -215,12 +226,17 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
       fix <- MASS::mvrnorm(n = 1, mu = nlme::fixef(object), Sigma = vcov(object))
     }
     
-    if(psim == 2){
+    if(psim >= 2){
       fix <- MASS::mvrnorm(n = 1, mu = nlme::fixef(object), Sigma = vcov(object))
       
       if(is.null(object$modelStruct$corStruct)){
-        rsds.std <- stats::rnorm(N, 0, 1) ## These are standardized residuals 'pearson'
-        rsds <- rsds.std * attr(object[["residuals"]], "std") ## This last term is 'sigma'        
+        if(is.null(args$newdata) || is.null(object$modelStruct$varStruct)){
+          rsds.std <- stats::rnorm(N, 0, 1)
+          rsds <- rsds.std * attr(object[["residuals"]], "std")       
+        }else{
+          rsds.std <- stats::rnorm(nrow(newdata), 0, 1)
+          rsds <- rsds.std * predict_varFunc(object, newdata = newdata)
+        }      
       }else{
         ## For details on this see simulate_gnls
         ## This is my attempt at modeling correlated residuals
@@ -232,6 +248,7 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
         rsds <- Matrix::as.matrix(chol.var.cov.err %*% rnorm(nrow(chol.var.cov.err)))
       }
     }
+    
     ##-------------------------------------------------------------##
     
     for(nm in fnames){
@@ -251,7 +268,31 @@ simulate_nlme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.ac
       for(i in seq_along(ranForm)) {
         names(ranForm[[i]]) <- rnames[[i]]
       }
-      ran <- nlme::ranef(object)
+      
+      ran <- nlme::ranef(object)  
+      
+      if(psim == 3){
+        ## I really have no idea if this code will work for more
+        ## than one group
+        re <- object$coefficients$random[1:maxQ]
+        ## If there is more than one group... I need to loop over that?
+        for(k in names(re)){
+          reDelta <- as.matrix(object$modelStruct$reStruct[[k]]) * sigma(object)^2
+          
+          rval <- MASS::mvrnorm(n = nrow(re[[k]]), 
+                               mu = rep(0, ncol(re[[k]])), 
+                               Sigma = reDelta, empirical = TRUE)
+          
+          dimnames(rval) <- dimnames(re[[k]])
+          
+          if(inherits(ran, "data.frame")){
+            ran[1:nrow(ran),] <- as.data.frame(rval)  
+          }else{
+            ran[[k]] <- as.data.frame(rval)
+          }
+        }
+      }
+      
       ran <- if(is.data.frame(ran)) list(ran) else rev(ran)
       ##    rn <- lapply(ran[whichQ], names)
       ran <- lapply(ran, t)

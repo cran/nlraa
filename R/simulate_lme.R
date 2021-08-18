@@ -71,7 +71,7 @@ simulate_lme <- function(object, nsim = 1, psim = 1,
     sim.mat <- matrix(ncol = nsim, nrow = nrow(list(...)$newdata))  
   } 
     
-  ## First example for the gnls case
+  ## First example for the gls case
   for(i in seq_len(nsim)){
     if(inherits(object, "gls")){
       sim.mat[,i] <- as.vector(simulate_gls(object, psim = psim, data = data, ...))
@@ -131,12 +131,21 @@ simulate_lme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.act
   args <- list(...)
   if(!is.null(args$newdata)){
     newdata <- args$newdata
+    if(!is.null(object$modelStruct$corStruct) && psim > 1)
+      stop("At this point 'newdata' is not compatible with psim > 1 and correlated residuals",
+           call. = FALSE)
   }else{
     if(is.null(data)){
       newdata <- try(nlme::getData(object), silent = TRUE)
       if(inherits(newdata, "try-error") || is.null(newdata)) 
         stop("'data' argument is required. It is likely you are using simulate_lme_one inside another function")
     }else{
+      if(object$dims$N != nrow(data)){
+        stop("Number of rows in data argument does not match the original data \n
+              The data argument should only be used to pass the same data.frame \n 
+              used to fit the model",
+             call. = FALSE)
+      }
       newdata <- data
     }  
   } 
@@ -288,7 +297,6 @@ simulate_lme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.act
       dimnames(val) <- dimnames(re[[i]])
       j <- j + 1
     }
-    
     re[[i]] <- val
   }
   
@@ -307,8 +315,13 @@ simulate_lme_one <- function(object, psim = 1, level = Q, asList = FALSE, na.act
     fix <- MASS::mvrnorm(n = 1, mu = fixef(object), Sigma = vcov(object))
     
     if(is.null(object$modelStruct$corStruct)){
-      rsds.std <- stats::rnorm(N, 0, 1) ## These are standardized residuals 'pearson'?
-      rsds <- rsds.std * attr(object[["residuals"]], "std") ## This last term is 'sigma'
+      if(is.null(args$newdata) || is.null(object$modelStruct$varStruct)){
+        rsds.std <- stats::rnorm(N, 0, 1)
+        rsds <- rsds.std * attr(object[["residuals"]], "std") ## This last term is 'sigma'        
+      }else{
+        rsds.std <- stats::rnorm(nrow(newdata), 0, 1)
+        rsds <- rsds.std * predict_varFunc(object, newdata = newdata)
+      }
     }else{
       ## For details on this see simulate_gnls
       var.cov.err <- var_cov(object, sparse = TRUE, data = newdata)

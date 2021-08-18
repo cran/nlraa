@@ -3,12 +3,14 @@
 \name{predict_nlme}
 \alias{predict_nlme}
 \alias{predict_lme}
+\alias{predict_gnls}
+\alias{predict_gls}
 \title{Average predictions from several (non)linear models based on IC weights}
 \usage{
 predict_nlme(
   ...,
   criteria = c("AIC", "AICc", "BIC"),
-  interval = c("none", "confidence", "prediction"),
+  interval = c("none", "confidence", "prediction", "new-prediction"),
   level = 0.95,
   nsim = 1000,
   plevel = 0,
@@ -18,7 +20,27 @@ predict_nlme(
 predict_lme(
   ...,
   criteria = c("AIC", "AICc", "BIC"),
-  interval = c("none", "confidence", "prediction"),
+  interval = c("none", "confidence", "prediction", "new-prediction"),
+  level = 0.95,
+  nsim = 1000,
+  plevel = 0,
+  newdata = NULL
+)
+
+predict_gnls(
+  ...,
+  criteria = c("AIC", "AICc", "BIC"),
+  interval = c("none", "confidence", "prediction", "new-prediction"),
+  level = 0.95,
+  nsim = 1000,
+  plevel = 0,
+  newdata = NULL
+)
+
+predict_gls(
+  ...,
+  criteria = c("AIC", "AICc", "BIC"),
+  interval = c("none", "confidence", "prediction", "new-prediction"),
   level = 0.95,
   nsim = 1000,
   plevel = 0,
@@ -30,7 +52,9 @@ predict_lme(
 
 \item{criteria}{either \sQuote{AIC}, \sQuote{AICc} or \sQuote{BIC}.}
 
-\item{interval}{either \sQuote{none}, \sQuote{confidence} or \sQuote{prediction}.}
+\item{interval}{either \sQuote{none}, \sQuote{confidence} or \sQuote{prediction}.
+It is also possible to choose \sQuote{new-prediction}, which is a prediction that
+resamples the random effects (only relevant for \sQuote{lme} or \sQuote{nlme} objects.)}
 
 \item{level}{probability level for the interval (default 0.95)}
 
@@ -48,6 +72,10 @@ Computes weights based on AIC, AICc, or BIC and it generates weighted prediction
 the relative value of the IC values
 
 predict function for objects of class \code{\link[nlme]{lme}}
+
+predict function for objects of class \code{\link[nlme]{gnls}}
+
+predict function for objects of class \code{\link[nlme]{gls}}
 }
 \note{
 all the objects should be fitted to the same data. The weights are

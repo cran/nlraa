@@ -2,11 +2,13 @@
 #' 
 #' @title Bootstraping for linear mixed models
 #' @name boot_lme
+#' @rdname boot_lme
 #' @param object object of class \code{\link[nlme]{lme}} or \code{\link[nlme]{gls}}
 #' @param f function to be applied (and bootstrapped), default coef (gls) or fixef (lme)
 #' @param R number of bootstrap samples, default 999
 #' @param psim simulation level for vector of fixed parameters either for \code{\link{simulate_gls}} or \code{\link{simulate_lme}}
 #' @param cores number of cores to use for parallel computation
+#' @param data optional data argument (useful/needed when data are not in an available environment).
 #' @param ... additional arguments to be passed to function \code{\link[boot]{boot}}
 #' @details This function is inspired by \code{\link[car]{Boot}}, which does not
 #' seem to work with \sQuote{gls} or \sQuote{lme} objects. This function makes multiple copies 
@@ -28,10 +30,11 @@
 #' 
 
 boot_lme <- function(object, 
-                      f = NULL, 
-                      R = 999, 
-                      psim = 1, 
-                      cores = 1L,
+                     f = NULL, 
+                     R = 999, 
+                     psim = 1, 
+                     cores = 1L,
+                     data = NULL,
                       ...){
   ## I chose to write it in this way instead of UseMethod
   ## because I feel it is more efficient and results in less code
@@ -41,9 +44,16 @@ boot_lme <- function(object,
   
   ## extract the original data
   ## This is needed for 'boot'
-  ## dat <- eval(object$call$data) -- old version
-  dat <- nlme::getData(object)
+  dat <- try(nlme::getData(object), silent = TRUE)
+  if(inherits(dat, "try-error") && missing(data)){
+    stop("'data' argument is required. It is likely you are using boot_lme inside another function. 
+          The data are not in an available environment.", call. = FALSE)    
+  } 
   
+  if(!missing(data)){
+    dat <- data
+  }
+
   if(missing(f)){
     if(inherits(object, "gls")) f <- coef
     if(inherits(object, "lme")) f <- fixef
@@ -140,6 +150,11 @@ boot_lme <- function(object,
   assign(".k.boot.lme", 0L, envir = nlraa.lme.env)
   return(ans)
 }
+
+#' @rdname boot_lme
+#' @description bootstrap function for objects of class \code{\link[nlme]{gls}}
+#' @export
+boot_gls <- boot_lme
 
 #' Create an nlraa environment for bootstrapping lme
 #' 

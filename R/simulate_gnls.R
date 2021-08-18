@@ -33,12 +33,13 @@
 #' @param na.action default \sQuote{na.fail}. See \code{\link[nlme]{predict.gnls}}
 #' @param naPattern missing value pattern. See \code{\link[nlme]{predict.gnls}}
 #' @param data the data argument is needed when using this function inside user defined functions.
+#' It should be identical to the data used to fit the model.
 #' @param ... additional arguments (it is possible to supply a newdata this way)
 #' @return It returns a vector with simulated values with length equal to the number of rows 
 #' in the original data
 #' @details It uses function \code{\link[MASS]{mvrnorm}} to generate new values for the coefficients
 #' of the model using the Variance-Covariance matrix \code{\link{vcov}}. This variance-covariance matrix 
-#' refers to the one for the parameters 'beta', not the one for the residuals.
+#' refers to the one for the parameters \sQuote{beta}, not the one for the residuals.
 #' @seealso \code{\link[nlme]{predict.gnls}}
 #' @export
 #' @examples 
@@ -65,12 +66,21 @@ simulate_gnls <- function(object, psim = 1, na.action = na.fail, naPattern = NUL
     args <- list(...)
     if(!is.null(args$newdata)){
       ndata <- args$newdata
+      if(!is.null(object$modelStruct$corStruct) && psim == 2)
+        stop("At this point 'newdata' is not compatible with psim = 2 and correlated residuals",
+             call. = FALSE)
     }else{
       if(is.null(data)){
         ndata <- try(nlme::getData(object), silent = TRUE)
         if(inherits(ndata, "try-error") || is.null(ndata)) 
           stop("'data' argument is required. It is likely you are using simulate_gnls inside another function")
       }else{
+        if(object$dims$N != nrow(data)){
+          stop("Number of rows in data argument does not match the original data \n
+              The data argument should only be used to pass the same data.frame \n 
+              used to fit the model",
+               call. = FALSE)
+        }
         ndata <- data
       } 
     } 
@@ -153,8 +163,14 @@ simulate_gnls <- function(object, psim = 1, na.action = na.fail, naPattern = NUL
       ## N is the number of rows in the data
       ## this works for uncorrelated errors
       if(is.null(object$modelStruct$corStruct)){
-        rsds.std <- stats::rnorm(N, 0, 1)
-        rsds <- rsds.std * attr(residuals(object), "std") ## This last term is 'sigma'
+        if(is.null(args$newdata) || is.null(object$modelStruct$varStruct)){
+          rsds.std <- stats::rnorm(N, 0, 1)
+          rsds <- rsds.std * attr(residuals(object), "std") ## This last term is 'sigma'        
+        }else{
+          ## This chunk of code was added 2021-08-13. It allows for newdata, varStruct and psim = 2
+          rsds.std <- stats::rnorm(nrow(ndata), 0, 1)
+          rsds <- rsds.std * predict_varFunc(object, newdata = ndata)
+        }
       }else{
         ## This was added 2020-05-04
         ## This extracts the variance covariance of the error matrix
