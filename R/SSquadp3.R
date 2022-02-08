@@ -1,9 +1,12 @@
 #' 
 #' The equation is, for a response (y) and a predictor (x): \cr
-#'   \eqn{y ~ (x <= xs) * (a + b * x + c * x^2) + (x >= xs) * (a + (-b^2)/(4 * c))} \cr
+#'   \eqn{y ~ (x <= xs) * (a + b * x + c * x^2) + (x > xs) * (a + (-b^2)/(4 * c))} \cr
 #'   
 #' where the break-point (xs) is -0.5*b/c \cr
 #' and the asymptote is (a + (-b^2)/(4 * c))
+#' 
+#' In this model the parameter \sQuote{xs} is not directly estimated. If this is required,
+#' the model \sQuote{SSquadp3xs} should be used instead.
 #' 
 #' @title self start for quadratic-plateau function
 #' @name SSquadp3
@@ -54,7 +57,7 @@ quadp3 <- function(x, a, b, c){
   
   .xs <- -0.5 * b/c
   
-  .value <- (x <= .xs) * (a + b * x + c * x^2) + (x >= .xs) * (a + (-b^2)/(4 * c))
+  .value <- (x <= .xs) * (a + b * x + c * x^2) + (x > .xs) * (a + (-b^2)/(4 * c))
   
   ## Derivative with respect to a
   .exp1 <- 1 

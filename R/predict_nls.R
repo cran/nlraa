@@ -176,6 +176,7 @@ IC_tab <- function(..., criteria = c("AIC","AICc","BIC"), sort = TRUE){
   
   for(i in seq_len(lobjs)){
     obj <- objs[[i]]
+    
     if(data.name != as.character(deparse(obj$call$data))) 
       stop("All models should be fitted to the same data")
     
@@ -333,6 +334,9 @@ predict_gam <- function(object, newdata=NULL, type="link", se.fit=TRUE, terms=NU
 #' parameter estimates are normally distributed. This assumption can be evaluated
 #' by using bootstrap.
 #' 
+#' The method currently works well for any nonlinear function, but if predictions
+#' are needed on new data, then it is required that a selfStart function is used.
+#' 
 #' 
 #' @title Prediction Bands for Nonlinear Regression
 #' @name predict2_nls
@@ -350,11 +354,13 @@ predict_gam <- function(object, newdata=NULL, type="link", se.fit=TRUE, terms=NU
 #' require(ggplot2)
 #' require(nlme)
 #' data(Soybean)
+#' 
 #' SoyF <- subset(Soybean, Variety == "F" & Year == 1988)
 #' fm1 <- nls(weight ~ SSlogis(Time, Asym, xmid, scal), data = SoyF)
 #' ## The SSlogis also supplies analytical derivatives
 #' ## therefore the predict function returns the gradient too
 #' prd1 <- predict(fm1, newdata = SoyF)
+#' 
 #' ## Gradient
 #' head(attr(prd1, "gradient"))
 #' ## Prediction method using gradient
@@ -365,12 +371,11 @@ predict_gam <- function(object, newdata=NULL, type="link", se.fit=TRUE, terms=NU
 #'    geom_line(aes(y = Estimate)) + 
 #'    geom_ribbon(aes(ymin = Q2.5, ymax = Q97.5), fill = "purple", alpha = 0.3) +
 #'    ggtitle("95% Confidence Bands")
+#'   
+#' ## This is equivalent 
 #' fm2 <- nls(weight ~ Asym/(1 + exp((xmid - Time)/scal)), data = SoyF,
 #'            start = c(Asym = 20, xmid = 56, scal = 8))
-#' ## Using predict.nls on this object will not return a gradient 
-#' ## so predict2_nls will fail
-#' predict(fm2)
-#' ## For this reason, functions which use a selfStart are recommended
+#'            
 #' ## Prediction interval
 #' prdi <- predict2_nls(fm1, interval = "pred")
 #' SoyFA.PI <- cbind(SoyF, prdi) 
@@ -380,12 +385,15 @@ predict_gam <- function(object, newdata=NULL, type="link", se.fit=TRUE, terms=NU
 #'    geom_line(aes(y = Estimate)) + 
 #'    geom_ribbon(aes(ymin = Q2.5, ymax = Q97.5), fill = "purple", alpha = 0.3) + 
 #'    ggtitle("95% Prediction Band")
+#'    
 #' ## For these data we should be using gnls instead with an increasing variance
 #' fmg1 <- gnls(weight ~ SSlogis(Time, Asym, xmid, scal), 
 #'              data = SoyF, weights = varPower())
+#'              
 #' IC_tab(fm1, fmg1)
-#' prdg <- predict_nlme(fmg1, plevel = 1, interval = "pred")
+#' prdg <- predict_gnls(fmg1, interval = "pred")
 #' SoyFA.GPI <- cbind(SoyF, prdg) 
+#' 
 #' ## These prediction bands are not perfect, but they could be smoothed
 #' ## to eliminate the ragged appearance
 #'  ggplot(data = SoyFA.GPI, aes(x = Time, y = weight)) + 
@@ -410,10 +418,18 @@ predict2_nls <- function(object, newdata = NULL,
   Lwr <- NA
   Upr <- NA
   if(interval != "none"){
-    grd <- attr(prd, "gradient") ## retrieve gradient  
-    if(is.null(grd))
-      stop("The gradient on the predictions is required for this function. See examples",
-           call. = FALSE)
+    grd <- attr(prd, "gradient") ## retrieves the gradient  
+    if(is.null(grd)){
+      if(is.null(newdata)){
+        grd <- object$m$gradient()
+        colnames(grd) <- names(coef(object))
+      }else{
+        ## Need to approximate the gradient numerically
+        form <- object$m$formula()
+        grd0 <- with(newdata, numericDeriv(form[[3]], names(coef(object))))
+        grd <- attr(grd0, "gradient")
+      }
+    }
     Rmat <- object$m$Rmat() ## R matrix
     vtR <- grd %*% solve(Rmat) ## gradient times R^-1
     vtR.L <- sqrt(apply(vtR^2, 1, sum)) ## length of vector

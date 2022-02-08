@@ -30,7 +30,7 @@
 #' @param sim vector with simulated data (should be the same length as observed)
 #' @param object alternative to the previous two arguments. An object of class \sQuote{lm}, \sQuote{nls} or \sQuote{lme}
 #' @param null.object optional object which represents the \sQuote{null} model. It is an intercept-only model
-#' by default.
+#' by default. (Not used at the moment).
 #' @seealso \code{\link{IC_tab}}
 #' @export
 #' @examples 
@@ -200,13 +200,15 @@ plot.IA_tab <- function(x, y, ..., type = c("OvsS", "RvsS")){
 #' Recommended reading: \cr
 #' Nakagawa and Schielzeth Methods in Ecology and Evolution \doi{10.1111/j.2041-210x.2012.00261.x} \cr
 #' 
-#' \url{https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/} \cr
+#' \url{https://stats.oarc.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/} \cr
 #' 
 #' Spiess, AN., Neumeyer, N. An evaluation of R2 as an inadequate measure for nonlinear models in 
 #' pharmacological and biochemical research: a Monte Carlo approach. BMC Pharmacol 10, 6 (2010). 
 #' \doi{10.1186/1471-2210-10-6} \cr
 #' 
 #' \url{https://stat.ethz.ch/pipermail/r-sig-mixed-models/2010q1/003363.html} \cr
+#' 
+#' \url{https://blog.minitab.com/en/adventures-in-statistics-2/why-is-there-no-r-squared-for-nonlinear-regression} \cr
 #' 
 #' \url{https://stats.stackexchange.com/questions/111150/calculating-r2-in-mixed-models-using-nakagawa-schielzeths-2013-r2glmm-me/225334#225334} \cr
 #'  
