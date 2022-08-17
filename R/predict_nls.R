@@ -11,6 +11,8 @@
 #' @param nsim number of simulations to perform for intervals. Default 1000.
 #' @param resid.type either \sQuote{none}, \dQuote{resample}, \dQuote{normal} or \dQuote{wild}.
 #' @param newdata new data frame for predictions
+#' @param weights vector of weights of the same length as the number of models. It should sum up to one and 
+#' it will override the information-criteria based weights. The weights should match the order of the models.
 #' @return numeric vector of the same length as the fitted object when interval is equal to \sQuote{none}. Otherwise,
 #' a data.frame with columns named (for a 0.95 level) \sQuote{Estimate}, \sQuote{Est.Error}, \sQuote{Q2.5} and \sQuote{Q97.5}
 #' @note all the objects should be fitted to the same data. Weights are
@@ -55,7 +57,7 @@ predict_nls <- function(..., criteria = c("AIC", "AICc", "BIC"),
                         interval = c("none", "confidence", "prediction"),
                         level = 0.95, nsim = 1e3,
                         resid.type = c("none", "resample", "normal", "wild"),
-                        newdata = NULL){
+                        newdata = NULL, weights){
   
   ## all objects should be of class 'nls' or inherit 'lm' (but this includes 'gam' and 'glm')
   nls.objs <- list(...)
@@ -93,14 +95,34 @@ predict_nls <- function(..., criteria = c("AIC", "AICc", "BIC"),
     if(criteria == "BIC") wtab$IC[i] <- stats::BIC(nls.obj)
   }
   
+  ## Check weights
+  if(!missing(weights)){
+    if(length(weights) != lobjs)
+      stop("'weights' should be a vector of length equal to the number of models", call. = FALSE)
+    if(isFALSE(all.equal(sum(weights), 1)))
+      stop("'sum of 'weights' should be equal to 1.", call. = FALSE)
+    if(any(weights < 0))
+      stop("all weights should be greater than zero", call. = FALSE)
+    if(any(weights > 1))
+      stop("all weights should be greater than zero", call. = FALSE)
+  }
+  
   ## Predictions
   if(interval == "none"){
     for(i in seq_len(lobjs)){
       nls.obj <- nls.objs[[i]]
       if(!is.null(newdata)){
-        prd.mat[,i] <- predict(nls.obj, newdata = newdata)  
+        if(inherits(nls.obj, "gam")){
+          prd.mat[,i] <- predict(nls.obj, newdata = newdata, type = "response")  
+        }else{
+          prd.mat[,i] <- predict(nls.obj, newdata = newdata)    
+        }
       }else{
-        prd.mat[,i] <- predict(nls.obj)  
+        if(inherits(nls.obj, "gam")){
+          prd.mat[,i] <- predict(nls.obj, type = "response")  
+        }else{
+          prd.mat[,i] <- predict(nls.obj)    
+        }
       }
     }
   }
@@ -119,7 +141,7 @@ predict_nls <- function(..., criteria = c("AIC", "AICc", "BIC"),
         tmp.sim <- simulate_lm(nls.obj, psim = psim, nsim = nsim, 
                                resid.type = resid.type, newdata = newdata) 
       
-      if(inherits(nls.obj, "glm")) 
+      if(inherits(nls.obj, "gam")) 
         tmp.sim <- simulate_gam(nls.obj, psim = psim, nsim = nsim, 
                                 resid.type = resid.type, newdata = newdata) 
       
@@ -135,7 +157,13 @@ predict_nls <- function(..., criteria = c("AIC", "AICc", "BIC"),
   }
 
   wtab$dIC <- wtab$IC - min(wtab$IC)
-  wtab$weight <- exp(-0.5 * wtab$dIC) / sum(exp(-0.5 * wtab$dIC))
+  
+  if(missing(weights)){
+    wtab$weight <- exp(-0.5 * wtab$dIC) / sum(exp(-0.5 * wtab$dIC))  
+  }else{
+    wtab$weight <- weights
+  }
+  
   
   if(interval == "none"){
     ans <- rowSums(sweep(prd.mat, 2, wtab$weight, "*"))
@@ -172,13 +200,23 @@ IC_tab <- function(..., criteria = c("AIC","AICc","BIC"), sort = TRUE){
   lobjs <- length(objs)
   
   ictab <- data.frame(model = character(lobjs), df = NA, AIC = NA, AICc = NA, BIC = NA)  
-  data.name <- as.character(deparse(objs[[1]]$call$data))
+  
+  if(inherits(objs[[1]], c("lmerMod", "merMod"))){
+    data.name <- as.character(deparse(objs[[1]]@call$data))
+  }else{
+    data.name <- as.character(deparse(objs[[1]]$call$data))  
+  }
   
   for(i in seq_len(lobjs)){
     obj <- objs[[i]]
-    
-    if(data.name != as.character(deparse(obj$call$data))) 
-      stop("All models should be fitted to the same data")
+  
+    if(inherits(obj, c("lmerMod", "merMod"))){
+      if(data.name != as.character(deparse(obj@call$data))) 
+        stop("All models should be fitted to the same data")
+    }else{
+      if(data.name != as.character(deparse(obj$call$data))) 
+        stop("All models should be fitted to the same data")  
+    }  
     
     ictab$model[i] <- nms[i]
     ictab$df[i] <- attr(stats::logLik(obj), "df")

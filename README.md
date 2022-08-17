@@ -41,9 +41,21 @@ This package supports the following publications:
    as an example. Ecology and Evolution. \
    https://doi.org/10.1002/ece3.5543
 
-Some recent publications which cite this package:
+Some recent publications that cite this package:
 
-14\. Positive associations of soil organic matter and crop yields across a regional network of working farms. Emily E. Oldfield,Mark A. Bradford,Abigail J. Augarten, Eric T. Cooley, Amber M. Radatz, Timothy Radatz, Matthew D. Ruark. Soil Science Society of America. 2021.  https://doi.org/10.1002/saj2.20349
+19\. Miguez, F. E., & Poffenbarger, H. (2022). How can we estimate optimum fertilizer rates with accuracy and precision? Agricultural & Environmental Letters, 7, e20075. https://doi.org/10.1002/ael2.20075
+
+18\. Pearce, A.W., Slaton, N.A., Lyons, S.E., Bolster, C.H., Bruulsema, T.W., Grove, J.H., Jones, J.D., McGrath, J.M., Miguez, F.E., Nelson, N.O., Osmond, D.L., Parvej, M.R., Pena-Yewtukhiw, E.M. and Spargo, J.T. (2022), Defining relative yield for soil test correlation and calibration trials in the fertilizer recommendation support tool. Soil Sci. Soc. Am. J.. Accepted Author Manuscript. https://doi.org/10.1002/saj2.20450
+
+17\. Rebecca L. Atkins, Kathleen M. Clancy, William T. Ellis, and Craig W. Osenberg. 
+Thermal Traits Vary with Mass and across Populations of the Marsh Periwinkle, Littoraria irrorata.
+The Biological Bulletin. 2022. https://doi.org/10.1086/719850
+
+16\. Guamani-Quimis, Lenin A., Ariolfo L. Solís-Bowen, Diego Portalanza, and Felipe R. Garcés-Fiallos. 2022. Can Mathematical Models Describe Spear Rot Progress in Oil Palm Trees? A Five-Year Black Weevil-Disease Assessment from Ecuador. Agriculture 12, no. 2: 257. https://doi.org/10.3390/agriculture12020257
+
+15\. Nichols, V. A., Moore, E. B., Gailans, S., Kaspar, T. C., & Liebman, M. (2022). Site-specific effects of winter cover crops on soil water storage. Agrosyst Geosci Environ, 5:e220238. https://doi.org/10.1002/agg2.20238
+
+14\. Positive associations of soil organic matter and crop yields across a regional network of working farms. Emily E. Oldfield, Mark A. Bradford, Abigail J. Augarten, Eric T. Cooley, Amber M. Radatz, Timothy Radatz, Matthew D. Ruark. Soil Science Society of America. 2021.  https://doi.org/10.1002/saj2.20349
 
 13\. Improvement of the Mass-Rearing Protocols for the South American Fruit Fly for Application of the Sterile Insect Technique. Mastrangelo et al. Insects 2021, 12(7), 622; https://doi.org/10.3390/insects12070622
 

@@ -1,6 +1,6 @@
 #' This function returns several indexes that might be useful for interpretation
 #' 
-#' For obbjects of class \sQuote{lm} or \sQuote{nls} \cr
+#' For objects of class \sQuote{lm} and \sQuote{nls} \cr
 #' bias: mean(obs - sim) \cr
 #' intercept: intercept of the model obs ~ beta_0 + beta_1 * sim + error \cr
 #' slope: slope of the model obs ~ beta_0 + beta_1 * sim + error \cr
@@ -28,7 +28,7 @@
 #' @description Indexes of agreement
 #' @param obs vector with observed data
 #' @param sim vector with simulated data (should be the same length as observed)
-#' @param object alternative to the previous two arguments. An object of class \sQuote{lm}, \sQuote{nls} or \sQuote{lme}
+#' @param object alternative to the previous two arguments. An object of class \sQuote{lm}, \sQuote{nls}, \sQuote{lme} or \sQuote{nlme}
 #' @param null.object optional object which represents the \sQuote{null} model. It is an intercept-only model
 #' by default. (Not used at the moment).
 #' @seealso \code{\link{IC_tab}}
@@ -42,23 +42,23 @@
 #' #' ## Linear model
 #' fit0 <- lm(lfgr ~ ftsw + I(ftsw^2), data = swpg)
 #' ias0 <- IA_tab(object = fit0)
-#' ias0$IA_tab
+#' ias0
 #' ## Nonlinear model
 #' fit1 <- nls(lfgr ~ SSblin(ftsw, a, b, xs, c), data = swpg)
 #' ias1 <- IA_tab(object = fit1)
-#' ias1$IA_tab
+#' ias1
 #' plot(ias1)
 #' ## Linear Mixed Models
 #' data(barley, package = "nlraa")
 #' fit2 <- lme(yield ~ NF + I(NF^2), random = ~ 1 | year, data = barley)
 #' ias2 <- IA_tab(object = fit2)
-#' ias2$IA_tab
+#' ias2
 #' ## Nonlinear Mixed Model
 #' barleyG <- groupedData(yield ~ NF | year, data = barley)
 #' fit3L <- nlsLMList(yield ~ SSquadp3(NF, a, b, c), data = barleyG)
 #' fit3 <- nlme(fit3L, random = pdDiag(a + b ~ 1))
 #' ias3 <- IA_tab(object = fit3)
-#' ias3$IA_tab
+#' ias3
 #' plot(ias3)
 #' ## Plotting model
 #' prds <- predict_nlme(fit3, interval = "conf", plevel = 0)
@@ -98,8 +98,15 @@ IA_tab <- function(obs, sim, object, null.object){
         stop("data argument should be used when fitting lm or nls models")
       obs <- eval(getCall(object)$data)[[resp.var]]
     }
+    
     if(inherits(object, c("gls", "gnls", "lme", "nlme")))
       obs <- nlme::getResponse(object)
+    
+    if(inherits(object, c("lmerMod", "merMod"))){
+      rsp.nm <- gsub("\\s+", "", strsplit(deparse(formula(object)), "~")[[1]][1])
+      obs <- getData(object)[[rsp.nm]]
+    }
+      
   }
   ## Bias
   bias <- mean(obs - sim)
@@ -142,21 +149,49 @@ IA_tab <- function(obs, sim, object, null.object){
                          ME = mod.eff, NME = norm.mod.eff, Corr = corr,
                          ConCorr = concor)
   }else{
-    ia_tab <- data.frame(bias = bias, 
-                         intercept = intercept,
-                         slope = slope,
-                         RSS = RSS, MSE = MSE, RMSE = RMSE,
-                         R2 = R2.1, 
-                         R2.marginal = R2$R2.marginal,
-                         R2.conditional = R2$R2.conditional,
-                         ME = mod.eff, NME = norm.mod.eff, Corr = corr,
-                         ConCorr = concor)
+    if(inherits(object, c("lmerMod", "merMod"))){
+      warning("R2 for 'lmerMod' or 'merMod' objects are not available.
+              There are some other packages which can compute this.
+              For example, MuMIn.")
+      ia_tab <- data.frame(bias = bias, 
+                           intercept = intercept,
+                           slope = slope,
+                           RSS = RSS, MSE = MSE, RMSE = RMSE,
+                           R2 = NA, 
+                           R2.marginal = NA,
+                           R2.conditional = NA,
+                           ME = mod.eff, NME = norm.mod.eff, Corr = corr,
+                           ConCorr = concor) 
+    }else{
+      ia_tab <- data.frame(bias = bias, 
+                           intercept = intercept,
+                           slope = slope,
+                           RSS = RSS, MSE = MSE, RMSE = RMSE,
+                           R2 = R2.1, 
+                           R2.marginal = R2$R2.marginal,
+                           R2.conditional = R2$R2.conditional,
+                           ME = mod.eff, NME = norm.mod.eff, Corr = corr,
+                           ConCorr = concor)      
+    }
   }
 
   lst <- list(IA_tab = ia_tab, obs = obs, sim = sim)
   ans <- structure(lst, class = "IA_tab")
   ans
 }
+
+
+#' @rdname IA_tab
+#' @description printing function for IA_tab
+#' @param x object of class \sQuote{IA_tab}.
+#' @param ... additional plotting arguments (none use at the moment).
+#' @param digits number of digits for rounding (default is 2)
+#' @export
+#' 
+print.IA_tab <- function(x, ..., digits = 2){
+  return(print(x$IA_tab, digits = digits))
+}
+
 
 #' @rdname IA_tab
 #' @description plotting function for a IA_tab, it requires \sQuote{ggplot2}
@@ -212,6 +247,8 @@ plot.IA_tab <- function(x, y, ..., type = c("OvsS", "RvsS")){
 #' 
 #' \url{https://stats.stackexchange.com/questions/111150/calculating-r2-in-mixed-models-using-nakagawa-schielzeths-2013-r2glmm-me/225334#225334} \cr
 #'  
+#' Other R pacakges which calculate some version of an R-squared: performance, rcompanion, MuMIn
+#' 
 #' @title R-squared for nonlinear mixed models
 #' @name R2M
 #' @rdname R2M
