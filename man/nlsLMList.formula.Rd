@@ -2,7 +2,7 @@
 % Please edit documentation in R/nlsLMList.R
 \name{nlsLMList.formula}
 \alias{nlsLMList.formula}
-\title{Formula method for nls 'LM' list method}
+\title{Formula method for nls \sQuote{LM} list method}
 \usage{
 \method{nlsLMList}{formula}(
   model,
@@ -13,6 +13,8 @@
   subset,
   na.action = na.fail,
   algorithm = c("LM", "default", "port", "plinear"),
+  lower = NULL,
+  upper = NULL,
   pool = TRUE,
   warn.nls = NA
 )
@@ -32,11 +34,18 @@
 
 \item{na.action}{see \code{\link{nlsList}}}
 
-\item{algorithm}{choice of algorithm default is 'LM' which uses 'nlsLM' from the minpack.lm package.}
+\item{algorithm}{choice of algorithm default is \sQuote{LM} which uses \sQuote{nlsLM} from the minpack.lm package.}
+
+\item{lower}{vectors of lower and upper bounds, replicated to be as long as start. If unspecified, all parameters are assumed to be unconstrained. Bounds can only be used with the \dQuote{port} algorithm. They are ignored, with a warning, if given for other algorithms.}
+
+\item{upper}{see \sQuote{lower}}
 
 \item{pool}{see \code{\link{nlsList}}}
 
 \item{warn.nls}{see \code{\link{nlsList}}}
+}
+\value{
+an object of class \sQuote{nlsList}
 }
 \description{
 formula method for nlsLMList
