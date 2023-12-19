@@ -1,5 +1,5 @@
 Package: nlraa
-Version: 1.9.3
+Version: 1.9.7
 Authors@R: c(person("Fernando", "Miguez", email = "femiguez@iastate.edu", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-4627-8329")),
              person("Caio", "dos Santos", role = c("ctb"), comment = "author of SSscard"), 
              person("José", "Pinheiro", role = c("ctb","cph"), comment = "author of nlme::nlsList, nlme::predict.gnls, nlme::predict.nlme"),
@@ -19,7 +19,7 @@ LazyData: true
 LazyDataCompression: xz
 RoxygenNote: 7.2.3
 NeedsCompilation: no
-Packaged: 2023-06-14 21:52:05 UTC; fernandomiguez
+Packaged: 2023-12-18 17:18:51 UTC; fernandomiguez
 Author: Fernando Miguez [aut, cre] (<https://orcid.org/0000-0002-4627-8329>),
   Caio dos Santos [ctb] (author of SSscard),
   José Pinheiro [ctb, cph] (author of nlme::nlsList, nlme::predict.gnls,
@@ -29,4 +29,4 @@ Author: Fernando Miguez [aut, cre] (<https://orcid.org/0000-0002-4627-8329>),
   R-core [ctb, cph]
 Maintainer: Fernando Miguez <femiguez@iastate.edu>
 Repository: CRAN
-Date/Publication: 2023-06-15 00:10:07 UTC
+Date/Publication: 2023-12-19 05:50:02 UTC
